@@ -1,0 +1,52 @@
+# Secrets and tokens: never commit
+.env
+.env.*
+!.env.example
+.xero/
+.gmail/
+.gdrive/
+.revolut/
+*.pem
+*.key
+*.p12
+
+# Environments
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime state: bank feeds, bill feeds, statements, reports, Slack state, logs.
+# Server-owned; never committed, never rsynced over.
+data/
+
+# Excel lock files
+~$*.xlsx
+
+# The group's own structure: entity names, account codes, Slack members.
+# Lives only on the laptop and the server; config/group.example.toml is the
+# tracked template.
+config/group.toml
+
+# Personal Claude Code settings
+.claude/settings.local.json
+
+# Runtime registers the scripts create on first use (docs/bookkept/README.md).
+# Server only, never committed.
+docs/bookkept/LEDGER.md
+docs/bookkept/OUTSTANDING.md
+docs/bookkept/outstanding.json
+docs/bookkept/.outstanding.lock

@@ -1,0 +1,30 @@
+[project]
+name = "accounting-agent"
+version = "0.1.0"
+description = "A Claude-driven bookkeeping agent over Xero, Slack, Gmail and Excel"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "certifi",
+    "openpyxl",
+    "pypdf",
+    "python-docx",
+    "pillow",
+    "lxml",
+    "slack_sdk",
+    "websocket-client",
+    # Revolut Business signs its client assertion with an RSA key
+    "cryptography>=42",
+]
+
+[project.optional-dependencies]
+# Kept so `pip install -e '.[revolut]'` still works; cryptography is now a
+# main dependency.
+revolut = []
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

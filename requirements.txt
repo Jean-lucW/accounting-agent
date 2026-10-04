@@ -1,0 +1,20 @@
+# Runtime dependencies. Python 3.11+ (tomllib reads config/group.toml).
+#
+#   certifi         SSL roots for every urllib call (Xero, Gmail, Drive, banks)
+#   openpyxl        every Excel workbook the agent builds
+#   pypdf           reading supplier invoice PDFs during a bookkeeping run
+#   python-docx     invoices that arrive as .docx; the outstanding items .docx
+#   pillow          invoices that arrive as images (JPG/PNG receipts)
+#   lxml            HTML/XML invoice and statement parsing
+#   slack_sdk       the Slack Socket Mode listener and every Slack post
+#   websocket-client  Socket Mode transport (dials out; no inbound port needed)
+#   cryptography    signs the Revolut Business client assertion (RS256)
+certifi>=2024.7.4
+openpyxl>=3.1.5
+pypdf>=5.0
+python-docx>=1.1
+pillow>=10.0
+lxml>=5.0
+slack_sdk>=3.33
+websocket-client>=1.8
+cryptography>=42

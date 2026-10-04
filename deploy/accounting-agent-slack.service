@@ -1,0 +1,41 @@
+# systemd unit for the Slack Socket Mode listener (scripts/slack_agent.py).
+#
+# deploy/install.sh fills in the placeholders and installs it. By hand,
+# replace all three everywhere in this file:
+#   __USER__        the Linux user that owns the checkout and runs the agent
+#   __USER_HOME__   that user's home directory (where ~/.local/bin is)
+#   __REPO__        the absolute path of the checkout (e.g. /opt/accounting-agent)
+#
+#   sed -e "s|__USER_HOME__|$HOME|g" -e "s|__USER__|$USER|g" -e "s|__REPO__|$PWD|g" \
+#       deploy/accounting-agent-slack.service \
+#       | sudo tee /etc/systemd/system/accounting-agent-slack.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now accounting-agent-slack
+#
+# docs/setup/SLACK.md walks through it.
+[Unit]
+Description=Accounting agent, Slack Socket Mode listener
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__REPO__
+# .env carries SLACK_APP_TOKEN, SLACK_BOT_TOKEN and the Claude credential
+# (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN). The listener itself never
+# calls Claude; the credential is here so the runs it spawns inherit it.
+EnvironmentFile=__REPO__/.env
+# The claude CLI is usually installed in ~/.local/bin.
+Environment=PATH=__USER_HOME__/.local/bin:__USER_HOME__/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=__REPO__/.venv/bin/python __REPO__/scripts/slack_agent.py
+Restart=always
+RestartSec=10
+# Stop ONLY the listener, never the runs it has spawned. systemd's default
+# KillMode=control-group kills every process in the cgroup, and setsid does not
+# escape a cgroup (it only detaches from the TTY). With the default, restarting
+# the service kills any bookkeeping run that is mid-flight.
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

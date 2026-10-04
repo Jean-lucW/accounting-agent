@@ -1,0 +1,70 @@
+# Accounting agent: cron entries.
+# deploy/install.sh --enable installs these between BEGIN/END marker lines in
+# the user's crontab, with __HOME__ replaced by the repo path, and leaves every
+# other line in that crontab alone. To install by hand instead:
+#   sed "s|__HOME__|$PWD|g" deploy/crontab.example   then paste into `crontab -e`
+#
+# Times are UTC. If the server runs other jobs, keep these clear of them: a
+# session competing for CPU or for the same Xero tenant runs slower and
+# nearer the rate limit.
+#
+# Every Claude job goes through deploy/run-scheduled.sh, which holds the prompt,
+# and then deploy/run-agent.sh, which takes the per-job lock, loads .env, defers
+# the run if Xero is at its daily rate limit, commits any write-back and runs the
+# phantom-payment check afterwards regardless of what the session thinks it did.
+
+# --- daily Mon-Sat 02:00: the bookkeeping chain ----------------------------
+# Three sessions one after another so two are never in Xero at once:
+#   bookkeep  invoice intake from the Slack app and the accounting inbox, coded
+#             and posted as AUTHORISED bills with the document attached, closed
+#             with the bill-payments check. Everything stays unpaid; the bank
+#             feed is still matched by hand in Xero.
+#   interco   intercompany reconciliation, read-only, breaks and the journals
+#             they need, plus the matrix workbook to Drive. Posts nothing.
+#   ap-check  the open accounts payable position per entity from the bill feed,
+#             overdue flagged, cross-checked against the bank feed.
+# Sunday is excluded: the review takes that day.
+0 2 * * 1-6 __HOME__/deploy/run-scheduled.sh daily >> __HOME__/data/logs/cron.log 2>&1
+
+# --- Mon-Fri 02:00: bills payable report + unpaid list DM ------------------
+# Fired at the same minute as the chain and waits on data/daily-chain.lock, so
+# it runs the moment the bookkeeping has finished. scripts/bills_report.py,
+# no Claude: every bill paid or open per entity, open bills searched for on
+# the bank, one workbook to the Drive folder, then the UNPAID bills DM'd to
+# [accounts_payable] unpaid_notify entity by entity.
+0 2 * * 1-5 __HOME__/deploy/run-scheduled.sh bills >> __HOME__/data/logs/cron.log 2>&1
+
+# --- Mon-Sat 02:00: prepayments, accruals, deposits, bank fees + summary ----
+# The same days as the intercompany reconciliation in the chain. Fired at the
+# same minute and waits on data/daily-chain.lock like `bills`, so it runs once
+# the bookkeeping has finished and never alongside it. scripts/prepayments_report.py,
+# accruals_report.py, deposits_report.py and bank_fees.py, no Claude: each refresh
+# rebuilds its workbook under data/reports/ and publishes the copy to the Drive
+# folder, then scripts/balance_reports_summary.py posts the findings to the
+# channel. Read-only against Xero.
+0 2 * * 1-6 __HOME__/deploy/run-scheduled.sh balance-reports >> __HOME__/data/logs/cron.log 2>&1
+
+# --- Wed + Sun 10:00: full bookkeeping review ------------------------------
+# Every entity in config/group.toml against docs/REVIEW_METHOD.md and rules/,
+# plus the intercompany reconciliation the review skill requires as a
+# standard check.
+0 10 * * 0,3 __HOME__/deploy/run-scheduled.sh review >> __HOME__/data/logs/cron.log 2>&1
+
+# --- optional, Mon 07:00: the outstanding-items list -----------------------
+# Off by default (an admin asks for it in Slack). Uncomment to post the
+# standing list to the channel every Monday.
+# 0 7 * * 1 __HOME__/deploy/run-scheduled.sh outstanding >> __HOME__/data/logs/cron.log 2>&1
+
+# --- every 10 minutes: Xero rate-limit retry sweep -------------------------
+# A run that met the 5000-a-day Xero cap wrote data/retry/<job>.retry holding
+# the second the cap resets. This re-runs it the moment that second passes.
+*/10 * * * * __HOME__/deploy/retry-sweep.sh >> __HOME__/data/logs/retry-sweep.log 2>&1
+
+# --- nightly: safety net (read-only, no Claude) ----------------------------
+# Cheap independent check that nothing created a phantom payment today,
+# including anything done by hand in Xero.
+0 23 * * * cd __HOME__ && ./.venv/bin/python scripts/check_no_phantom_payments.py >> __HOME__/data/logs/phantom-check.log 2>&1
+
+# --- weekly: log trim ------------------------------------------------------
+# Logs older than 30 days under data/logs are deleted.
+30 4 * * 0 find __HOME__/data/logs -type f -name '*.log' -mtime +30 -delete

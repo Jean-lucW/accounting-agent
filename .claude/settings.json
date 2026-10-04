@@ -1,0 +1,51 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v jq >/dev/null 2>&1 || { printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"install jq: the payment guard cannot run without it. Every Bash call is denied until jq is on PATH (apt-get install jq, brew install jq).\"}}'; exit 0; }; jq -r '.tool_input.command // \"\"' | grep -qE 'create_payment|create_payments_batch|create_batch_payment|allocate_prepayment|allocate_overpayment|allocate_credit_note|mark_reconciled|is_reconciled[[:space:]]*=[[:space:]]*True|(put|post|request)\\([^)]{0,40}Payments' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED by project safety rule: never create or allocate a payment, and never mark a bill paid or reconciled. Your job ends at an AUTHORISED bill with the source document attached and AmountDue still equal to the total. The user matches the imported bank statement line to it by hand in Xero. A payment you create is a phantom unreconciled bank entry that duplicates the real feed line. Do NOT rewrite this call to evade the check, and do not move the code into a file to run later: that is blocked too. Remove the payment step and tell the user which bills you left unpaid. Payroll bills cleared from control accounts (rules/PAYROLL.md) are the user'\\''s to clear: propose the amounts, never post.\"}}' || true",
+            "timeout": 10,
+            "statusMessage": "Checking for banned payment writes"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-payments.sh\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Payment guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-readonly.py\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Read-only guard (query sessions only)"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"${AGENT_RUN:-}\" = 1 ] && jq -r '.prompt // \"\"' | grep -qiE 'bookkeep|bookkept|invoice|accounting (inbox|email|@)|bank feed' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"UserPromptSubmit\", \"additionalContext\": \"BOOKKEEPING RUN DETECTED. Before anything else, in this order: (1) invoke the xero-bills skill with the Skill tool (it requires the xero skill too); (1a) read the bank feed data/bankfeed/<entity>.md for every entity in scope (the unreconciled statement lines, server only), check the last-checked stamp on each account, then run .venv/bin/python scripts/bankfeed.py refresh all, and remove a line the MOMENT the bill or spend money accounting for it is posted; (1b) refresh the bill feed: .venv/bin/python scripts/billfeed.py refresh all (every AUTHORISED unpaid bill per entity from Xero); (2) run .venv/bin/python scripts/ledger_prune.py then read docs/bookkept/LEDGER.md in full; (3) run the metadata-only 7-day completeness sweep of the Slack app messages and the accounting inbox threads (senders, timestamps and attachment counts only, do NOT re-read the underlying invoices) and queue every message whose seen/bookkept counts do not match; (4) append a ledger line the moment each item settles, not batched at the end; (5) cross-check any bank lines pasted by a user against the ledger before chasing anyone; (6) after the intake, load the bill-payments skill and run its check against the bank lines already read: an open bill in one entity paid from another entity gets the payer'\\''s spend money to the intercompany loan and a bill payments line in the report, same-entity matches need nothing, and no payment is ever created. The ledger is a completeness index only: the Xero duplicate guard remains the authority before any create. Company-specific judgement (which entity recognises a cost, coding, allocation, suppliers, payroll, interco routing) comes from rules/, structure and account codes from config/group.toml. Load ONLY the bookkeeping domain. Every query, manual item and blocked line goes into scripts/outstanding.py in the same step that sends it. NEVER create a payment or mark a bill paid: bills stay AUTHORISED and unpaid, the user reconciles the bank feed to them by hand. FINISH the run by executing: .venv/bin/python scripts/check_no_phantom_payments.py; it must print PASS before you report the run as done.\"}}' || true",
+            "timeout": 10,
+            "statusMessage": "Checking bookkeeping workflow"
+          }
+        ]
+      }
+    ]
+  }
+}
