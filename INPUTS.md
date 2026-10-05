@@ -137,6 +137,8 @@ payment guard refuses every command without `jq`.
 - [ ] **O** Matching tolerances, small-break threshold, fallback FX rates and
       FX narration wording → `[intercompany_settings]`. Defaults are
       provided.
+- [ ] **O** Tracking categories an entity's FX revaluation lines must carry
+      → `[intercompany_settings.fx_tracking]`
 
 ## 8. Shared costs
 

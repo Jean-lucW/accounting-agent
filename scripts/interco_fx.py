@@ -33,9 +33,12 @@ translation.
         --post --confirm "Example Holdings Limited"   # posts ONE journal, after the draft was agreed
 
 Drafts are the default and nothing is sent to Xero without --post. Posting
-is a separate, explicit admin instruction per journal (`xero` safety rule 1):
-the entity is named in full in --confirm, the lock date is read live, an
-idempotency key is passed, and the journal is re-read after posting.
+happens only when an admin asks for the month's revaluations from Slack
+(skill `xero-interco-fx`), never from a scheduled run, and each --post call
+posts one journal (`xero` safety rule 1): the entity is named in full in
+--confirm, the lock date is read live, an idempotency key is passed, and the
+journal is re-read after posting. Lines carry the entity's tracking from
+[intercompany_settings.fx_tracking], if any.
 """
 from __future__ import annotations
 
@@ -63,6 +66,14 @@ def narration_template() -> str:
     return config.section("intercompany_settings").get("fx_narration", NARRATION)
 
 
+def tracking_for(entity_key: str) -> list[dict] | None:
+    """Tracking on the revaluation lines in one entity, from
+    [intercompany_settings.fx_tracking] <KEY> = { <category> = "<option>" }.
+    None when the entity has none set (the lines go in untracked)."""
+    t = (config.section("intercompany_settings").get("fx_tracking") or {}).get(entity_key) or {}
+    return [{"Name": k, "Option": v} for k, v in t.items()] or None
+
+
 def is_month_end(d: str) -> bool:
     dt = datetime.date.fromisoformat(d)
     return (dt + datetime.timedelta(days=1)).day == 1
@@ -86,7 +97,7 @@ def denomination(pair: dict, rates: dict) -> str | None:
     for x, y, _w in pair.get("matched", []):
         add(x)
         add(y)
-    for key in ("groups", "probable"):
+    for key in ("groups", "probable", "confirmed"):
         for ga, gb, _w in pair.get(key, []):
             for t in ga + gb:
                 add(t)
@@ -209,7 +220,9 @@ def post(d: dict, confirm: str, dry: bool) -> str:
         lock = org.get(k)
         if lock and str(lock)[:10] >= d["date"]:
             return f"not posted: {d['entity']} {k} {lock} is on or after {d['date']}; a journal dated there is silently dropped"
-    lines = [make_journal_line(ln["AccountCode"], ln["LineAmount"], ln["Description"]) for ln in d["lines"]]
+    tracking = tracking_for(d["entity_key"])
+    lines = [make_journal_line(ln["AccountCode"], ln["LineAmount"], ln["Description"], tracking=tracking)
+             for ln in d["lines"]]
     payload = prepare_manual_journal(d["narration"], lines, date=d["date"], status="POSTED")
     if dry:
         return "dry run: payload validated, nothing sent\n" + json.dumps(payload, indent=1)

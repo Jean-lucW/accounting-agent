@@ -112,7 +112,10 @@ mkdir -p data/interco, then AGENT_READONLY=1 .venv/bin/python scripts/interco_re
 with .venv/bin/python scripts/interco_matrix.py, whose publish to the Drive folder is the
 only write this run makes. Classify every difference and set out the correcting journal
 each one needs, but post nothing to Xero: posting is a separate instruction from an
-admin. Report only the breaks and what they need; a pair that agrees is one line.
+admin. List the open items with scripts/interco_breaks.py list. Never post an FX
+revaluation: after a month end, say which pairs are ready and that an admin posts them
+with run post the fx interco journals. Report only the breaks and what they need; a pair
+that agrees is one line.
 $RATE_LIMIT $CHANNEL"
 
     ./deploy/run-agent.sh ap-check "Scheduled daily accounts payable check. Refresh the

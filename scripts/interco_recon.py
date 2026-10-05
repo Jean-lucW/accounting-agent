@@ -666,6 +666,35 @@ def match_groups(a_rows, b_rows, rates, day_tol: int = 45, fx_tol: float = 0.03,
     return out
 
 
+# Lines the matcher cannot pair on its own but that are one transaction, most
+# often a correction dated a month end against a line weeks earlier. Recorded
+# by `scripts/interco_breaks.py confirm` on the server, with the evidence.
+CONFIRMED = ROOT / "data" / "interco" / "confirmed_matches.json"
+
+
+def load_confirmed() -> list[dict]:
+    try:
+        return json.loads(CONFIRMED.read_text())
+    except (OSError, ValueError):
+        return []
+
+
+def match_confirmed(a_rows, b_rows) -> list[tuple[list, list, str]]:
+    """Pair the lines a confirmed entry names, before any other pass. An
+    entry applies only when every one of its documents is on this account."""
+    out = []
+    for entry in load_confirmed():
+        ids = set(entry.get("doc_ids") or [])
+        ga = [t for t in a_rows if not t.matched and t.doc_id in ids]
+        gb = [t for t in b_rows if not t.matched and t.doc_id in ids]
+        if not ids or {t.doc_id for t in ga + gb} != ids:
+            continue
+        for t in ga + gb:
+            t.matched = True
+        out.append((ga, gb, entry.get("reason", "confirmed")))
+    return out
+
+
 def match_sides(a_rows, b_rows, rates, day_tol: int = 35, fx_tol: float = 0.03):
     """Pair up the two sides of one intercompany account.
 
@@ -689,12 +718,18 @@ def match_sides(a_rows, b_rows, rates, day_tol: int = 35, fx_tol: float = 0.03):
                         to 35% apart: paired and shown with the gap to
                         investigate
 
+      -  confirmed      lines recorded as one transaction by
+                        interco_breaks.py confirm
+                        (data/interco/confirmed_matches.json), paired
+                        before everything else
+
     Whatever is left is genuinely one-sided: a real break.
     """
     fx_a = [t for t in a_rows if is_fx_adjustment(t)]
     fx_b = [t for t in b_rows if is_fx_adjustment(t)]
     for t in fx_a + fx_b:
         t.matched = True
+    confirmed = match_confirmed(a_rows, b_rows)
 
     contra_a, contra_b = find_contras(a_rows), find_contras(b_rows)
     matches = []
@@ -742,6 +777,7 @@ def match_sides(a_rows, b_rows, rates, day_tol: int = 35, fx_tol: float = 0.03):
         "matched": matches,
         "groups": groups,
         "probable": probable,
+        "confirmed": confirmed,
         "fx_adjustments": {"a": fx_a, "b": fx_b},
         "contras": {"a": contra_a, "b": contra_b},
         "unmatched_a": [t for t in a_rows if not t.matched],
@@ -956,7 +992,7 @@ def main() -> int:
         n_un = len(res["unmatched_a"]) + len(res["unmatched_b"])
         residual = (sum(to_rep(a, rates) + to_rep(b, rates) for a, b, _ in res["matched"])
                     + sum(sum(to_rep(t, rates) for t in ga) + sum(to_rep(t, rates) for t in gb)
-                          for ga, gb, _ in res["groups"]))
+                          for ga, gb, _ in res["groups"] + res["confirmed"]))
         status = status_of(brk, av, bv, a_rows, b_rows, n_un)
 
         print(f'{name:<40}{a_code + " " + format(av, ",.2f") + " " + BASE[a_ent]:>25}'
@@ -970,6 +1006,7 @@ def main() -> int:
             "matched": [(x.__dict__, y.__dict__, w) for x, y, w in res["matched"]],
             "groups": [([t.__dict__ for t in ga], [t.__dict__ for t in gb], w) for ga, gb, w in res["groups"]],
             "probable": [([t.__dict__ for t in ga], [t.__dict__ for t in gb], w) for ga, gb, w in res["probable"]],
+            "confirmed": [([t.__dict__ for t in ga], [t.__dict__ for t in gb], w) for ga, gb, w in res["confirmed"]],
             "matched_residual": residual,
             "fx_adjustments": {k: [t.__dict__ for t in v] for k, v in res["fx_adjustments"].items()},
             "contras": {k: [(x.__dict__, y.__dict__) for x, y in v] for k, v in res["contras"].items()},
@@ -977,7 +1014,7 @@ def main() -> int:
             "unmatched_b": [t.__dict__ for t in res["unmatched_b"]],
         })
 
-        if (n_un or abs(residual) > 1 or res["groups"] or res["probable"]
+        if (n_un or abs(residual) > 1 or res["groups"] or res["probable"] or res["confirmed"]
                 or res["fx_adjustments"]["a"] or res["fx_adjustments"]["b"]):
             details.append((name, a_ent, b_ent, res, rates))
 
@@ -1016,6 +1053,14 @@ def main() -> int:
             d = sum(to_rep(t, rates_) for t in ga) + sum(to_rep(t, rates_) for t in gb)
             print(f"  GROUP MATCH {w}: {len(ga)} in {a_ent} against {len(gb)} in {b_ent}, "
                   f"translation gap {REP} {d:,.2f}")
+            for t in ga:
+                print(f"    [{a_ent}] " + fmt(t))
+            for t in gb:
+                print(f"    [{b_ent}] " + fmt(t))
+        for ga, gb, w in res["confirmed"]:
+            d = sum(to_rep(t, rates_) for t in ga) + sum(to_rep(t, rates_) for t in gb)
+            print(f"  CONFIRMED MATCH (recorded as one transaction, nets off; translation gap {REP} {d:,.2f}):"
+                  f" {w[:90]}")
             for t in ga:
                 print(f"    [{a_ent}] " + fmt(t))
             for t in gb:

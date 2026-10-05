@@ -169,8 +169,10 @@ posted by the entity whose base currency is **not** the currency the loan is
 denominated in: the ledger in the loan's own currency carries it at face
 value, the other ledger's carrying value floats. It is drafted by
 `scripts/interco_fx.py` and posted only through the `xero-interco-fx` skill,
-and **only once every transaction on the account has its counterpart**
-(one-to-one or a group match, reversals filtered out). A revaluation posted
+when an admin asks from Slack once the workbook is right (never by a
+scheduled run), and **only once every transaction on the account has its
+counterpart** (one-to-one, a group match or a confirmed match, reversals
+filtered out). A revaluation posted
 over an open one-sided item books that item as FX and hides it; the pair then
 agrees at the month end while both P&Ls are wrong. Same-currency pairs are
 never revalued.
@@ -296,11 +298,16 @@ before first use.
    does not is read, not assumed: the mirror was never posted, the
    recognising side's bill has not been settled against the loan account, the
    payer split what the other side booked whole, or a genuine error.
+   Lines that are one transaction but too far apart in date for the matcher
+   (a correction dated a month end against an earlier line) are recorded
+   with `scripts/interco_breaks.py confirm`, with the evidence and who
+   decided; the matcher pairs them first from then on.
 7. **Classify** each residual per §3 and propose the correction.
 8. **Revalue** (`xero-interco-fx`) only when the account has no one-sided
    items left: the remaining break is then translation, and one one-sided
    journal in the entity carrying the foreign-currency balance brings the pair
-   to zero (§3D).
+   to zero (§3D). The journals are posted when an admin asks for them from
+   Slack, all the ready pairs at the last month end in one run.
 9. **Walk the break back through the monthly history** to find the last month the
    pair agreed. A break present for months is a different problem from one that
    appeared this month, and the fix must not re-correct an already-corrected

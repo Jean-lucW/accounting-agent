@@ -139,8 +139,9 @@ RULES: list[tuple[str, re.Pattern, str]] = [
     ("repo loader or build script",
      re.compile(r"scripts/(bankfeed|billfeed|ledger_prune|interco_recon|interco_matrix"
                 r"|build_\w+|\w+_report|slack_agent)\.py|deploy/\S+\.sh|\.claude/hooks/"
-                # the outstanding register may be listed, never changed or rendered
-                r"|scripts/outstanding\.py(?!\s+list\b)"),
+                # the outstanding register and the interco open items may be
+                # listed, never changed or rendered
+                r"|scripts/(outstanding|interco_breaks)\.py(?!\s+list\b)"),
      "those scripts load, rebuild or move things. Read the workbook or the data "
      "they already produced instead."),
     ("write flag",

@@ -123,6 +123,8 @@ same balance translated at its own dates' rates. The difference is cleared by a
 one-sided revaluation journal (`docs/INTERCOMPANY_RECON.md` §3D, drafted by
 `scripts/interco_fx.py`). The FX gain/loss account it uses is
 `fx_gain_loss_account` in `config/group.toml` `[intercompany_settings]`.
+The journals are posted only when an admin asks from Slack (`run post the fx
+interco journals`), never by a scheduled run (skill `xero-interco-fx`).
 
 <!-- FILL IN: how often to revalue (every month end is the safe default),
 which side revalues each cross-currency pair (default: the entity whose base

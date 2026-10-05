@@ -209,6 +209,12 @@ sweep_markers = []                   # narration words that mark a periodic bala
 stop_words = []                      # extra words ignored when matching narrations across entities
 # default_rates = { EUR = 1.08, GBP = 1.27 }   # fallback rates to reporting currency when Xero gives none
 
+# Tracking on the FX revaluation journal lines, per posting entity: category =
+# option, both already set up in that Xero organisation (two at most). An
+# entity not listed posts its revaluations untracked.
+# [intercompany_settings.fx_tracking]
+# OPCO_EU = { Region = "EU" }
+
 # -----------------------------------------------------------------------------
 # SLACK: who may talk to the agent. Anyone not listed is ignored entirely.
 # Member IDs: Slack profile > three dots > Copy member ID.

@@ -241,8 +241,11 @@ Write in plain English: the reader is whoever is chased.
 - `xero-interco-fx`: the last step of an intercompany recon: once every
   transaction on a cross-currency pair has its counterpart, draft the FX
   revaluation that brings the pair to zero (`scripts/interco_fx.py`). Refuses
-  while anything is one-sided. Posting is a separate, explicit admin
-  instruction per journal.
+  while anything is one-sided. An admin posts every ready draft at the last
+  month end from Slack, `run post the fx interco journals` in any wording,
+  once the workbook is right, and the workbook is rebuilt after; never cron.
+  Lines the matcher cannot pair but that are one transaction are recorded
+  with `scripts/interco_breaks.py confirm`, so the pair can become ready.
 - `reports`: the standing report catalogue. Matches a request to the one
   report skill that owns it: `report-bills` (every bill, paid or open, every
   open bill verified against the bank with the reason it is still open),

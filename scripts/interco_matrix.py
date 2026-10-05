@@ -217,6 +217,10 @@ def collect(as_at: str, year_from: str, only: list[str] | None = None):
 # what is left on screen is the business with the counterparty that has to
 # reconcile line by line; the rest is set aside by kind, not deleted.
 CAT_INTERCO, CAT_REVERSAL, CAT_FX, CAT_SWEEP, CAT_CT = "Interco", "Reversal", "FX Reval", "Sweep JE", "CT"
+# Lines recorded as one transaction the matcher could not pair
+# (data/interco/confirmed_matches.json, interco_breaks.py confirm). They net
+# off, so the tab's filter hides them like a reversal.
+CAT_NETTED = "Netted"
 
 
 def category(items, rates, reversed_=False, fx=False):
@@ -262,6 +266,10 @@ def pair_rows(a_ent, b_ent, res, rates, hints=None):
         out.append((d0, sorted(ga, key=lambda t: t.date), sorted(gb, key=lambda t: t.date),
                     f"PROBABLE MATCH - same supplier or subject, amounts differ by {rep} "
                     f"{tot(ga) + tot(gb):,.2f}, investigate", CAT_INTERCO))
+    for ga, gb, why in res.get("confirmed", []):
+        d0 = min(t.date for t in ga + gb)
+        out.append((d0, sorted(ga, key=lambda t: t.date), sorted(gb, key=lambda t: t.date),
+                    f"CONFIRMED MATCH - one transaction, nets off: {why[:120]}", CAT_NETTED))
     for t in res["unmatched_a"]:
         out.append((t.date, [t], [], hints.get(id(t)) or f"ONE-SIDED - no entry in {short(b_ent)}",
                     category([t], rates)))
@@ -336,7 +344,8 @@ def write_pair_sheet(wb, sheet, pair, rows, rates, opening_a, opening_b, closing
                 f"is missing. A merged block is a group match: several lines one side against one or several the other.")
     ws["A3"] = (f"Debit-positive. A matched pair or group should net to zero in {rep}; the Diff column is the residual. "
                 "Column B is the category: Interco (business with the counterparty, must reconcile line by line), "
-                "Reversal (a posting undone by its own reversal), FX Reval (one-sided by design), "
+                "Reversal (a posting undone by its own reversal), Netted (one transaction recorded as "
+                "confirmed, posted on dates too far apart for the matcher), FX Reval (one-sided by design), "
                 "Sweep JE (a consolidation or sweep journal between interco accounts), CT (under the rounding "
                 "tolerance). The tab opens filtered to Interco.")
     for r in (2, 3):

@@ -17,7 +17,11 @@ entity pair, flavour and account code) is `config/group.toml`
 `[[intercompany]]`; never hard-code a code in a script or a note.
 
 A reconciliation is **read-only by default**. Correcting journals are proposed
-in the report and posted only on a separate, confirmed admin instruction.
+in the report and posted only on a separate, confirmed admin instruction. FX
+revaluations are posted by an admin from Slack once the workbook is right
+(`xero-interco-fx`): after a month end the report says which pairs are ready
+to revalue and that an admin posts them with `run post the fx interco
+journals`; this run never posts one.
 
 ## When this runs
 
@@ -107,6 +111,24 @@ flavour, or a genuine error), never left as a count. Only when a
 cross-currency account has none left is it revalued (`xero-interco-fx`), and
 the FX drafts at the end of the recon report say which pairs are ready.
 
+**Open items and confirmed matches.** `scripts/interco_breaks.py list --json
+<recon json>` lists what is still open, one item per story with a stable key:
+a one-sided line, a probable match, or a matched pair booked at genuinely
+different amounts (reversals, revaluations, timing differences, group
+matches, translation gaps and lines under the tolerance are already
+explained). Related lines in one pair (same amount, dates within 3 days, same
+counterparty) are one item. Where an item's lines are one transaction the
+matcher cannot pair (a counterpart posted weeks later, a correction dated a
+month end against an earlier line), record it:
+`scripts/interco_breaks.py confirm --key <key> --all-lines --reason "<the
+documents that prove it>" --by <admin who ruled, or agent>`. `--by agent` only
+where the documents settle it on their own (equal and opposite amounts, or a
+correction whose narration names the line it fixes); otherwise it is a query.
+The recon pairs those lines first from then on and the workbook files them
+under `Netted`, which the tab's filter hides. `unconfirm --key` undoes one
+recorded in error. A confirmation changes no ledger, but it decides whether a
+pair is ready to revalue, so it is reported like a posting.
+
 **Mind the daily call cap.** This is a call-heavy tool: ~6 endpoints per entity
 for the transaction rebuild plus a multi-period Balance Sheet and the chart of
 accounts, and Xero allows **5,000 calls per organisation per day**. Hitting it
@@ -148,6 +170,23 @@ difference**.
    posted without knowing which will just move an unquantified difference around.
 5. **Check the resolved patterns** in `rules/INTERCOMPANY.md` §8 and apply them
    without re-asking.
+
+## The balances, end to end
+
+In this order, each step waiting for the one before it:
+
+1. **Agree every pair item by item**, so only FX is left: this skill's
+   reconciliation, the corrections an admin approves, and confirmed matches.
+   Runs daily, read-only.
+2. **Post the FX revaluations** once an admin has reviewed the workbook and is
+   happy: `xero-interco-fx`, started from Slack with `run post the fx interco
+   journals`. The workbook then agrees in full.
+3. **Any period-end sweep** `rules/INTERCOMPANY.md` §6 sets, after the
+   revaluation, on an admin's instruction.
+4. **Rebuild the workbook** after each posting step.
+
+Steps 2 and 3 are always an admin's instruction, never cron. The daily run
+only says in its report when they are due.
 
 ## Scope: a pair is not reconciled until all seven are done
 
@@ -203,6 +242,7 @@ Full playbook with worked examples: `docs/INTERCOMPANY_RECON.md` §9.
 | `AMOUNT / FX DIFFERENCE` | matched, but the transaction-currency amounts genuinely differ | check both against the source document |
 | `GROUP MATCH n:m` | several lines one side against one or several the other, netting within tolerance | none; the gap shown is translation |
 | `PROBABLE MATCH n:m` | same supplier or subject within 10 days, amounts up to 35% apart | read both source documents; the gap is a real difference to explain |
+| `CONFIRMED MATCH` | lines recorded as one transaction with `interco_breaks.py confirm` | none; filed under `Netted` |
 | `REVERSED` | a posting and its own reversal inside one ledger | ignore, nets to nil; flagged in column B and filtered out of the tab |
 | `FX REVALUATION` | a one-sided revaluation journal | ignore, correct by design |
 | `TIMING DIFFERENCE` | same item, different dates | ignore unless it straddles a period end that matters |

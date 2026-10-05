@@ -157,7 +157,7 @@ flowchart TB
         XR["xero-reconcile<br/>bank reconciliation"]:::code
         XV["xero-review<br/>health check"]:::code
         XI["xero-interco<br/>line-by-line interco recon"]:::code
-        XF["xero-interco-fx<br/>FX revaluation draft"]:::code
+        XF["xero-interco-fx<br/>FX revaluation: draft daily,<br/>post on an admin's Slack instruction"]:::code
         IE["agent: invoice-extract<br/>one document to JSON"]:::code
     end
 
@@ -309,7 +309,10 @@ flowchart LR
     MAT --> WB["Intercompany Reconciliation.xlsx"]:::out
     WB --> T1["Summary: entity x entity matrix"]:::out
     WB --> T2["One line-by-line tab<br/>per configured pair"]:::out
-    CLS --> FX["scripts/interco_fx.py<br/>draft FX revaluation<br/>(posting needs an explicit admin instruction)"]:::code
+    CLS --> BRK["scripts/interco_breaks.py<br/>open items; confirmed matches<br/>paired first on the next run"]:::code
+    BRK --> REC
+    CLS --> FX["scripts/interco_fx.py<br/>draft FX revaluation<br/>(refuses while anything is one-sided)"]:::code
+    FX --> POST["run post the fx interco journals<br/>admin, from Slack, never cron:<br/>every ready pair at the last month end"]:::you
 
     classDef you fill:#fff3bf,stroke:#e67700,stroke-width:2px,color:#000
     classDef code fill:#e7f5ff,stroke:#1971c2,color:#000

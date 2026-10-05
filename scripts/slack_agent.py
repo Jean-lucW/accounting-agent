@@ -262,9 +262,11 @@ that row's skill and its docs, and read NOTHING belonging to the others.
 {table}
 
 Support skills load alongside any domain when the task needs them: `xero`
-always, plus xero-interco / xero-review / xero-reconcile; bill-payments runs
-inside every bookkeeping run. The outstanding-items list is not a domain: it
-has its own skill and decides nothing about the books.
+always, plus xero-interco / xero-interco-fx / xero-review / xero-reconcile;
+bill-payments runs inside every bookkeeping run. An admin's "post the fx
+interco journals", in any wording, is squarely xero-interco-fx: load it with
+xero-interco and follow its posting run. The outstanding-items list is not a
+domain: it has its own skill and decides nothing about the books.
 
 Company-specific judgement (which entity recognises a cost, coding,
 allocation, suppliers, payroll, intercompany routing) comes from rules/;
@@ -407,8 +409,8 @@ else: no intake pull, no ledger sweep, no bills that were not part of it.
 
 Load the xero skill for the API surface and the safety rules. Then load the ONE
 domain skill the task belongs to, per the domain table above, and no other. A
-support skill (xero-interco, xero-review, xero-reconcile, bill-payments) loads
-only if the task is squarely its own.
+support skill (xero-interco, xero-interco-fx, xero-review, xero-reconcile,
+bill-payments) loads only if the task is squarely its own.
 
 Default to read-only. If answering properly would mean a ledger write the
 request did not ask for, say what you would change and ask by DM first.

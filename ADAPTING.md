@@ -85,6 +85,7 @@ in `config/group.toml`, each explained in `config/group.example.toml`.
 | Each intercompany pair: entities, kind, both account codes, payments-enabled | `[[intercompany]]` `a`, `b`, `flavour`, `label`, `accounts`, `payments_enabled` | R if more than one entity | intercompany recon and workbook, FX revaluation |
 | Accounts that look intercompany but are not | `[[non_group]]` | O | intercompany recon (reported, never matched) |
 | FX gain or loss account, matching tolerances, narration patterns | `[intercompany_settings]` | O | intercompany recon, FX drafts |
+| Tracking on an entity's FX revaluation lines | `[intercompany_settings.fx_tracking]` | O | FX revaluation journals |
 | Report channel | `[slack]` `channel_id`, `channel_name` | R | every report |
 | Admins, users, read-only users | `[slack.admins]`, `[slack.users]`, `[slack.readonly]` (member ID = display name) | R (one admin) | the Slack listener |
 | Who to chase for a missing document | `[slack.chase_routing]` (cardholder, then category, then entity, then `default`) | O | chases |
