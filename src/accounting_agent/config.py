@@ -39,6 +39,10 @@ class ConfigError(Exception):
     """config/group.toml is missing or describes something impossible."""
 
 
+# [auto_resolve] act_from: the lowest grade the agent acts on without asking.
+GRADES_ACTED_FROM = ("off", "high", "medium")
+
+
 # --------------------------------------------------------------------- shapes
 
 @dataclass(frozen=True)
@@ -310,6 +314,15 @@ def _load(path_str: str) -> Group:
         raise ConfigError(f"{path}: [company] financial_year_end must be MM-DD "
                           f"(e.g. 12-31, 03-31); got {fye!r}")
 
+    ar = raw.get("auto_resolve") or {}
+    if str(ar.get("act_from", "off")) not in GRADES_ACTED_FROM:
+        raise ConfigError(f"{path}: [auto_resolve] act_from must be one of "
+                          f"{', '.join(GRADES_ACTED_FROM)}; got {ar.get('act_from')!r}")
+    for k in ("medium_limit", "high_limit", "confirm_days"):
+        v = ar.get(k, 0)
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+            raise ConfigError(f"{path}: [auto_resolve] {k} must be a number, 0 or more; got {v!r}")
+
     return Group(path=path, raw=raw, company=company_block, entities=entities,
                  pairs=tuple(pairs), non_group=non_group, slack=slack, domains=domains)
 
@@ -528,6 +541,44 @@ def accounts_payable() -> dict[str, Any]:
     return s
 
 
+def auto_resolve() -> dict[str, Any]:
+    """[auto_resolve], with every key filled. No section means `off`: every
+    question goes to a person, as before the section existed."""
+    s = {"act_from": "off", "medium_limit": 0, "high_limit": 0, "confirm_days": 0}
+    s.update(section("auto_resolve"))
+    return s
+
+
+def resolve_action(grade: str, amount: float) -> tuple[str, str]:
+    """What the agent does with its own answer to a question it would have
+    asked: ("act" | "confirm" | "query", why). `amount` is the money the
+    answer moves, in the reporting currency.
+
+    act      post it, report it under `resolved`
+    confirm  post it, report it under `to confirm`, register it for an admin
+    query    ask, with the proposed answer in the question
+    """
+    grade = grade.strip().lower()
+    if grade not in ("high", "medium", "low"):
+        raise ConfigError(f"grade must be high, medium or low; got {grade!r}")
+    s = auto_resolve()
+    cur = reporting_currency()
+    act_from = str(s["act_from"])
+    if act_from == "off":
+        return "query", "[auto_resolve] is off"
+    if grade == "low":
+        return "query", "low confidence"
+    if s["high_limit"] and abs(amount) > s["high_limit"]:
+        return "query", f"over the high limit, {cur} {s['high_limit']:,.2f}"
+    if grade == "high":
+        return "act", "high confidence"
+    if act_from == "high":
+        return "query", "medium confidence, and only high is acted on"
+    if s["medium_limit"] and abs(amount) > s["medium_limit"]:
+        return "query", f"medium confidence over the medium limit, {cur} {s['medium_limit']:,.2f}"
+    return "confirm", "medium confidence"
+
+
 def report_settings(kind: str | None = None) -> dict[str, Any]:
     r = section("reports")
     return r if kind is None else (r.get(kind) or {})
@@ -559,6 +610,11 @@ def describe() -> str:
     lines += ["", f"slack: {len(s.admins)} admins, {len(s.users)} users, {len(s.readonly)} read-only,"
                   f" channel {s.channel_id or '(unset)'}",
               "domains: " + ", ".join(d.key for d in g.domains)]
+    ar = auto_resolve()
+    lines.append("auto_resolve: off, every question goes to a person" if ar["act_from"] == "off" else
+                 f"auto_resolve: acts from {ar['act_from']}, medium limit {ar['medium_limit']:,},"
+                 f" high limit {ar['high_limit']:,} {reporting_currency()},"
+                 f" confirm within {ar['confirm_days']} days")
     return "\n".join(lines)
 
 

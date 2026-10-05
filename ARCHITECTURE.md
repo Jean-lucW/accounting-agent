@@ -207,22 +207,28 @@ flowchart TD
     BF["Read data/bankfeed/ENTITY.md<br/>then bankfeed.py refresh all"]:::code
     BI["billfeed.py refresh all<br/>every AUTHORISED unpaid bill"]:::code
     LG["ledger_prune.py, read docs/bookkept/LEDGER.md"]:::code
+    TC["Settle open to-confirm items:<br/>admin replies, then outstanding.py accept"]:::code
     SW["7-day completeness sweep<br/>Slack app messages + Gmail inbox"]:::code
     EX["Fan out invoice-extract<br/>(Haiku) per document"]:::code
     DEC{"Decide per invoice<br/>using rules/"}:::you
+    ANS["Answer it from the evidence,<br/>grade high / medium / low"]:::you
+    GATE{"resolve_gate.py"}:::code
     DUP{"Duplicate guard<br/>already in Xero?"}:::code
     POST["Create AUTHORISED bill<br/>+ attach document<br/>+ idempotency key"]:::code
     LBL["Gmail label, ledger line,<br/>remove bank feed line"]:::code
-    Q["Query / manual / blocked<br/>outstanding.py add"]:::code
+    Q["Query with proposed answer,<br/>manual, blocked<br/>outstanding.py add"]:::code
     BPAY["bill-payments check<br/>open bill paid by another entity?<br/>payer spend money to interco loan"]:::code
     RF["bankfeed.py refresh all (again)"]:::code
     PH{"check_no_phantom_payments.py<br/>PASS?"}:::code
     REP(["Report to the Slack channel:<br/>header + report in thread"]):::out
     FIX["Stop and report the failure"]:::out
 
-    START --> H --> L1 --> BF --> BI --> LG --> SW --> EX --> DEC
+    START --> H --> L1 --> BF --> BI --> LG --> TC --> SW --> EX --> DEC
     DEC -->|"clear"| DUP
-    DEC -->|"unclear"| Q
+    DEC -->|"unclear"| ANS --> GATE
+    GATE -->|"act: resolved"| DUP
+    GATE -->|"confirm: to confirm"| DUP
+    GATE -->|"query"| Q
     DUP -->|"no"| POST --> LBL
     DUP -->|"yes"| LBL
     LBL --> BPAY

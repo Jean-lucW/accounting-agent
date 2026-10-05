@@ -22,8 +22,8 @@ The list is a file, `docs/bookkept/OUTSTANDING.md`, rendered from
 `docs/bookkept/outstanding.json` by `scripts/outstanding.py`. One section per
 domain (the domains in `config/group.toml`, plus `platform` for the agent's
 own plumbing), and inside each domain the three subsections `manual items`,
-`queried` and `blocked`, plus `awaiting documents` and `watch` where they have
-content.
+`queried` and `blocked`, plus `to confirm`, `awaiting documents` and `watch`
+where they have content.
 
 **Every run in every domain writes its own items into the register as it sends
 them, and deletes them as they are answered.** That is the rule the register
@@ -82,13 +82,15 @@ are the register itself and the Slack post in "The message" below.
 
 ## What counts
 
-Five kinds, and each line belongs to exactly one. The first three are the
-subsections every domain has; the last two appear only when they have content.
+Six kinds, and each line belongs to exactly one. Manual items, queried and
+blocked are the subsections every domain has; the other three appear only when
+they have content.
 
 | Kind | `--kind` | What it is | Who closes it |
 |---|---|---|---|
 | **manual items** | `manual` | a step only a person can take in Xero: reconcile a bill to intercompany, clear a control account, recode a reconciled line, set depreciation, retype an account, void behind a lock date | an admin, in the Xero UI |
 | **queried** | `queried` | a decision the agent asked for and has not received: which entity, which record stays, post this journal or not, which account | the admin the question was put to |
+| **to confirm** | `decided` | an answer the agent reached itself at medium confidence and has already posted (`scripts/resolve_gate.py` said `confirm`) | an admin's yes or no; or, unchallenged for `[auto_resolve] confirm_days`, `scripts/outstanding.py accept` at the start of the next bookkeeping run |
 | **blocked** | `blocked` | a run tried and could not: a missing scope, a locked period, an API that refuses the write, a statement nobody has sent | whoever owns the obstacle |
 | **awaiting documents** | `documents` | a chase to a person for an invoice or receipt that has not arrived by the last run that mentioned it | the person chased |
 | **watch** | `watch` | nothing to do now, check later: a control account expected to clear when a journal posts, a refund expected the month it lands | nobody, until it moves |

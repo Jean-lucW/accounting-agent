@@ -90,7 +90,10 @@ detail.
 `docs/COMMS.md` governs the message, as always. What the Checks sheet holds is
 not one undifferentiated list: a check waiting on an admin's answer goes under
 `queries`, a check whose fix is a step only a person can take goes under
-`manual`, and they are two sections, never one.
+`manual`, and they are two sections, never one. A report run is read-only,
+so it never has a `to confirm` section: where it can answer a check itself,
+the answer goes into the query as the proposed one (CLAUDE.md, "Queries:
+answer them before asking them").
 
 ```
 prepayments · 34 active · 2 queries · 1 manual · refreshed every entity

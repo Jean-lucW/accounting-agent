@@ -157,6 +157,12 @@ each entity's short name from config/group.toml):
   *bookkept*
   • Contoso Cloud Ltd · 04 Sep · EUR 980.00 · paid <entity> · recognised <entity> · INV-1002
 
+  *resolved*
+  • <entity>, the invoice is billed to it and its last three bills sit there · a travel supplier · 03 Sep · USD 410.00 · recognised <entity> · INV-1007
+
+  *to confirm*
+  • Software (<code>) in <entity>, a new supplier selling the same tool as an existing one. Reply yes, or the right account · 06 Sep · EUR 180.00 · INV-1008
+
   *bill payments*
   • a hotel supplier · 28 Aug · EUR 240.00 · booked to Travel · INV-1003, paid by <entity A>, recognised as a bill in <entity B>, spend money posted in <entity A>. *Manually reconcile the bill in <entity B> to intercompany.*
 
@@ -167,7 +173,7 @@ each entity's short name from config/group.toml):
   • a tax reclaim cannot post, the period lock date rejects it · DR <code> / CR <code>, EUR 480.00
 
   *queries*
-  • a cloud hosting bill, which entity · 05 Sep, USD 1,250.00, INV-1001
+  • a cloud hosting bill, <entity A> or <entity B>? Proposed <entity A> (low): billed to it, paid by <entity B>'s card · 05 Sep · USD 1,250.00 · INV-1001
 
   *manual*
   • reconcile the <entity B> hotel bill to intercompany · INV-1003
@@ -187,7 +193,8 @@ the line, the invoice shape, not attempted vs blocked, one line per message
 sent, from users (the only place the admin learns what the user tier said),
 counts only for labels and ledger lines, dropping empty sections except
 queried, the bill payments section, the 15-bill cut and the closing line when
-bills were created.
+bills were created. It also covers resolved and to confirm: answers the run
+reached itself, the second waiting on an admin's yes.
 
 Check the API response has "ok":true. If false, log the error field and retry
 once.

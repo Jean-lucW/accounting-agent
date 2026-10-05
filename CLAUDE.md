@@ -24,7 +24,8 @@ Orientation:
 - `rules/`: the group's **judgement** (which entity recognises which cost,
   coding, allocation, suppliers, payroll, intercompany routing). Every
   company-specific decision comes from here. If `rules/` does not answer a
-  question, query an admin; never guess a rule.
+  question, answer it from the evidence and let the gate decide whether to
+  act ("Queries: answer them before asking them" below); never guess a rule.
 
 **A group not yet described.** If `config/group.toml` is missing, an entity
 in it has no rules file, a rules file still carries the example marker, or a
@@ -77,11 +78,13 @@ chases, thread replies, run reports, terminal answers. In short:
 3. **References go at the END of the line.** What happened in words first;
    invoice numbers, journal numbers, IDs and amounts trailing.
 4. **Sections whenever there is more than one category**: a bold lowercase
-   heading, bullets underneath: bookkept / bill payments / not attempted /
-   blocked / queries / manual / chased / from users / wrote back.
+   heading, bullets underneath: bookkept / resolved / to confirm / bill
+   payments / not attempted / blocked / queries / manual / chased / from
+   users / wrote back.
    `not attempted` (never started) and `blocked` (tried, could not) are never
    merged. Anything left with a person goes under `queries` (waiting on an
-   answer) or `manual` (waiting on a pair of hands).
+   answer), `to confirm` (done, waiting on an admin's yes) or `manual`
+   (waiting on a pair of hands).
 5. **Every invoice, every time**, in this shape:
    `<supplier> · <date> · <CCY> <amount> · paid <entity> · recognised <entity> · <number>`.
    Drop a field you do not have; never write unknown or n/a.
@@ -91,9 +94,9 @@ chases, thread replies, run reports, terminal answers. In short:
 Report every message you send as its own line: `chased the cardholder for the
 12 Mar hotel receipt, OPCO_US`.
 
-**Every query, manual item and blocked line goes into the standing register
-in the same step that sends it**:
-`scripts/outstanding.py add --domain <domain> --kind queried|manual|blocked|documents|watch --with <who> --key <reference> --text <what has to happen> --refs <reference tail>`.
+**Every query, `to confirm` item, manual item and blocked line goes into the
+standing register in the same step that sends it**:
+`scripts/outstanding.py add --domain <domain> --kind queried|decided|manual|blocked|documents|watch --with <who> --key <reference> --text <what has to happen> --refs <reference tail>`.
 Close it with `scripts/outstanding.py close --key <reference>` in the same
 step that posts the fix; `answer` it where an admin has ruled and the posting
 is still to do. Skill `outstanding-items` owns the register.
@@ -106,6 +109,54 @@ in its thread, and the admin's own thread gets the headline plus a pointer.
 shape (`MANUAL ITEMS (<date>, <time>)`); an admin closes one by replying
 `done` in that thread. The outstanding-items list is posted there too. Every
 other message stays with the person who asked. Full rules in `docs/COMMS.md`.
+
+## Queries: answer them before asking them
+
+A question is the last resort, not the first. Before one goes to a person,
+the run answers it itself from everything it can read, grades the answer, and
+`scripts/resolve_gate.py` decides what the grade allows, from
+`[auto_resolve]` in `config/group.toml`.
+
+**Evidence, strongest first**: the bank; the document itself (bill-to
+entity, period, tax registration); an explicit rule in `rules/`; the same
+supplier's earlier bills across every entity; the supplier mapping; the
+nearest analogous rule; what a sender said.
+
+**Grades**:
+
+- **high**: the evidence settles it and nothing points the other way. A rule
+  covers it once read properly, or the document states it, or two or more
+  earlier bills from the supplier were treated alike and this one matches.
+- **medium**: one clear signal and none against it, or signals that conflict
+  where one is plainly stronger in the order above.
+- **low**: signals conflict with none stronger, there is no evidence, or the
+  question is a policy choice evidence cannot settle (a new kind of cost, a
+  tax position the rules do not take, a split with no rule).
+
+**Then** `scripts/resolve_gate.py --grade <grade> --amount <amount in the
+reporting currency>`, and follow its first word:
+
+- `act`: post it by the normal path (duplicate guard, idempotency key,
+  AUTHORISED, never a payment) and report it under `resolved`.
+- `confirm`: post it the same way, report it under `to confirm` and register
+  it with `--kind decided`.
+- `query`: post nothing. Ask, with the proposed answer and its grade in the
+  question, so the admin can reply in a word.
+
+**Never answered alone, whatever the grade**: an amount, supplier or currency
+the document does not show; a missing document (that is a chase); whether two
+records are the same purchase; anything a safety rule governs; a write to a
+locked period or a reconciled transaction; any change to `rules/` beyond a
+supplier row. A read-only run answers but never acts: its answer goes into
+the query.
+
+**Closing a `to confirm` item.** An admin confirming it closes it and the
+answer is written back as a rule; an admin overruling it gets the posting
+corrected, the item closed and the admin's rule written back. Every
+bookkeeping run reads those replies first, then `scripts/outstanding.py
+accept` closes what nobody challenged within `confirm_days`. An item accepted
+by silence is not a rule: only an admin's ruling becomes one. The gate and
+its limits change only by an edit to `config/group.toml`, never by a ruling.
 
 ## The bank is the source of truth: `docs/BANKING.md`
 

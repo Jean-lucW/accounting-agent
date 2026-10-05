@@ -28,8 +28,9 @@ these steps:
 2. **Never invent a fact about their group:** an entity, account code,
    supplier rule, split or person. If an answer is missing or vague, ask
    again, or leave the section as `<!-- FILL IN -->`. An unfilled section
-   makes the live agent query an admin; a guessed one makes it post wrong
-   entries.
+   makes the live agent work from the evidence and query an admin where the
+   evidence does not settle it; a guessed one makes it post wrong entries
+   with the confidence of a written rule.
 3. **Ask about anything unusual.** Part 3 lists situations that need their
    own rule. If the person mentions something that fits nowhere in this
    guide, ask how they want it handled and write the answer into the file
@@ -90,6 +91,7 @@ in `config/group.toml`, each explained in `config/group.example.toml`.
 | Admins, users, read-only users | `[slack.admins]`, `[slack.users]`, `[slack.readonly]` (member ID = display name) | R (one admin) | the Slack listener |
 | Who to chase for a missing document | `[slack.chase_routing]` (cardholder, then category, then entity, then `default`) | O | chases |
 | Nicknames, people never to message | `[slack.nicknames]` (display name = nickname), `never_message` | O | prompts, chases |
+| What the agent may decide without asking | `[auto_resolve]` `act_from`, `medium_limit`, `high_limit`, `confirm_days` | O (left out: every question is asked) | `scripts/resolve_gate.py`, every run |
 | Who gets the unpaid bills list, timing windows | `[accounts_payable]` `unpaid_notify`, `lead_days`, `leg_window_days`, `card_lag_days` | O | bills report |
 | Words too common among your suppliers to identify one | `[accounts_payable]` `generic_supplier_words` | O | bills report name matching |
 | Bills never settled through the bank | `[[accounts_payable.not_via_bank]]` | O | bills report |

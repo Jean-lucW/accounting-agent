@@ -14,6 +14,8 @@ position rather than a list rebuilt from Slack history after the fact.
     python scripts/outstanding.py bump  --key INV-1042
     python scripts/outstanding.py answer --key INV-1042 --answer "reconciled"
     python scripts/outstanding.py close --key INV-1042 --reason "PAID, settled to intercompany"
+    python scripts/outstanding.py accept           # close `decided` items nobody overruled
+                                                   # within [auto_resolve] confirm_days
     python scripts/outstanding.py list [--domain bookkeeping] [--kind manual]
     python scripts/outstanding.py slack            # the message, split into chunks,
                                                    # for the channel in config/group.toml
@@ -78,12 +80,15 @@ def _domains() -> list[tuple[str, str]]:
 DOMAINS = _domains()
 DOMAIN_KEYS = [d for d, _ in DOMAINS]
 
-# The three subsections every domain has, and the two that appear only when
+# The three subsections every domain has, and the three that appear only when
 # they hold something. `answered` is a state, not a kind: an item whose admin
-# has ruled but whose posting no run has reported yet.
+# has ruled but whose posting no run has reported yet. `decided` is an answer
+# the agent reached itself at medium confidence and has already posted; it
+# waits for an admin to confirm or overrule it (scripts/resolve_gate.py).
 KINDS = [
     ("manual", "manual items"),
     ("queried", "queried"),
+    ("decided", "to confirm"),
     ("blocked", "blocked"),
     ("documents", "awaiting documents"),
     ("watch", "watch"),
@@ -472,6 +477,32 @@ def cmd_close(a) -> int:
     return 0
 
 
+def cmd_accept(a) -> int:
+    """Close every `decided` item nobody overruled within [auto_resolve]
+    confirm_days. Run it only after the replies have been read: an overrule
+    found in Slack is applied and closed first, so what is left here is
+    silence, and silence past the window is acceptance."""
+    days = int(config.auto_resolve()["confirm_days"])
+    if not days:
+        print("confirm_days is 0: decided items stay open until an admin answers")
+        return 0
+    today = date.fromisoformat(a.date) if a.date else date.today()
+    with locked():
+        items = load()
+        stale = [i for i in items if i["kind"] == "decided"
+                 and (today - date.fromisoformat(i["raised"])).days >= days]
+        for i in stale:
+            print(f"{i['id']} accepted, unchallenged for {days} days: {i['text']}")
+        if stale:
+            items = [i for i in items if i not in stale]
+            save(items)
+    if stale:
+        after_change(a)
+    else:
+        print("nothing past the window")
+    return 0
+
+
 def cmd_list(a) -> int:
     items = load()
     if a.domain:
@@ -566,6 +597,12 @@ def main(argv=None) -> int:
     close.add_argument("--defer", action="store_true",
                      help="do not publish to Drive yet; finish with `publish`")
     close.set_defaults(func=cmd_close)
+
+    acc = sub.add_parser("accept", help="close `decided` items unchallenged past confirm_days")
+    acc.add_argument("--date", default="", help="treat this ISO date as today (default today)")
+    acc.add_argument("--defer", action="store_true",
+                     help="do not publish to Drive yet; finish with `publish`")
+    acc.set_defaults(func=cmd_accept)
 
     lst = sub.add_parser("list", help="the register, whole or filtered")
     lst.add_argument("--domain", choices=DOMAIN_KEYS)

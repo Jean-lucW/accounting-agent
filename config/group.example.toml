@@ -14,8 +14,8 @@
 #   [[domains]]          the bookkeeping domain at least
 # OPTIONAL (sensible defaults when left out):
 #   [[entities.bank_accounts]], [entities.payroll_controls], [[intercompany]],
-#   [[non_group]], [intercompany_settings], [accounts_payable], [reports],
-#   [drive], [bank_fees], [safety]
+#   [[non_group]], [intercompany_settings], [auto_resolve], [accounts_payable],
+#   [reports], [drive], [bank_fees], [safety]
 #
 # Everything structural reads from here: which Xero organisations exist, their
 # short codes and currencies, which bank accounts feed which entity, every
@@ -254,6 +254,23 @@ channel_name = "accounting-agent"
 
 # People the agent must never message directly, whatever a rule says.
 # never_message = ["U0000000009"]
+
+# -----------------------------------------------------------------------------
+# QUERIES THE AGENT ANSWERS ITSELF (CLAUDE.md, "Queries: answer them before
+# asking them"). Before a question goes to a person, the agent answers it from
+# the evidence and grades the answer high, medium or low:
+#   high    acted on, reported under `resolved`
+#   medium  acted on, reported under `to confirm`, registered until an admin
+#           confirms or overrules it
+#   low     queried as before, the agent's proposed answer in the question
+# Leave the section out and every question goes to a person.
+# -----------------------------------------------------------------------------
+
+[auto_resolve]
+act_from = "medium"                  # lowest grade acted on alone: "high", "medium" or "off"
+medium_limit = 2500                  # reporting currency; above it a medium answer is queried (0 = no limit)
+high_limit = 25000                   # reporting currency; above it every answer is queried (0 = no limit)
+confirm_days = 7                     # an unchallenged `to confirm` item closes as accepted after this (0 = never)
 
 # -----------------------------------------------------------------------------
 # ACCOUNTS PAYABLE: the bills report and the bill-payments check.

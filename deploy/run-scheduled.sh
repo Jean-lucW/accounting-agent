@@ -55,16 +55,18 @@ CHANNEL_NAME="$(cfg 'config.slack().channel_name')"
 
 CHANNEL="Report into #${CHANNEL_NAME} (${CHANNEL_ID:-channel id not set in config/group.toml}) following
 docs/COMMS.md in full: sections, the invoice shape, references at the end of the line.
-Anything the run leaves with a person goes under one of two sections, queries for a
-question waiting on an answer and manual for an action waiting on a pair of hands, and
-under no other heading. This is a scheduled run with no admin thread behind it, so the
+Anything the run leaves with a person goes under one of three sections, queries for a
+question waiting on an answer, to confirm for a posting waiting on an admin's yes, and
+manual for an action waiting on a pair of hands, and under no other heading. Before a
+question goes out, answer it yourself and run scripts/resolve_gate.py (CLAUDE.md,
+\"Queries: answer them before asking them\"); a read-only run puts its answer in the query. This is a scheduled run with no admin thread behind it, so the
 channel is the only place it reports. Post the headline as a top-level message, the
 report itself as the first reply in that message thread. Head the top-level message with
 the run name and the date and time it started in ${TZ_NAME}. Then, if the run leaves
 anything for a person to do in Xero by hand, the same two calls again: a top-level message
 that is only MANUAL ITEMS (date, time ${TZ_NAME}) and the items as the first reply in its
-thread, opening with the run they came from. Every query and manual item also goes into
-scripts/outstanding.py in the same step that sends it."
+thread, opening with the run they came from. Every query, to confirm and manual item also
+goes into scripts/outstanding.py in the same step that sends it."
 
 NO_PAYMENTS='Never create or allocate a payment, never mark a bill paid and never
 reconcile anything: bills stay AUTHORISED and unpaid and the user matches the bank
@@ -94,10 +96,13 @@ case "${1:-}" in
     ./deploy/run-agent.sh bookkeep "Scheduled daily bookkeeping run, all ${ENTITY_COUNT}
 ${COMPANY} entities (${ENTITIES}). Load the xero-bills skill and follow it in full:
 read the reconstructed bank feed for every entity, refresh the bank feed and the bill
-feed, prune and read docs/bookkept/LEDGER.md, sweep the last seven days of the Slack app
-and the ${INBOX} inbox for anything not yet bookkept, parse each new document, code it
-per rules/EXPENSES.md, rules/SUPPLIERS.md and the entity's own file under rules/entities/,
-and create the AUTHORISED bill in the right entity with the source document attached.
+feed, prune and read docs/bookkept/LEDGER.md, settle the open to confirm items, sweep the
+last seven days of the Slack app and the ${INBOX} inbox for anything not yet bookkept,
+parse each new document, code it per rules/EXPENSES.md, rules/SUPPLIERS.md and the
+entity's own file under rules/entities/, and create the AUTHORISED bill in the right
+entity with the source document attached. A question the rules do not answer goes
+through the skill's step 3a: answer it, grade it, and post or query as
+scripts/resolve_gate.py says.
 Close the run with the bill-payments check against the bank lines already read, then
 refresh the bank feed again. Finish by running scripts/check_no_phantom_payments.py and
 report whether it printed PASS. Load the bookkeeping domain only. $NO_PAYMENTS
@@ -178,9 +183,10 @@ skill and review all ${ENTITY_COUNT} entities (${ENTITIES}) against the method a
 checklist in docs/REVIEW_METHOD.md and the group's own rules in rules/ (rules/GROUP.md,
 rules/EXPENSES.md, rules/SUPPLIERS.md, rules/PAYROLL.md, rules/INTERCOMPANY.md and each
 entity's file under rules/entities/), plus the standard hygiene checks, and run the
-intercompany reconciliation as the standard check the skill requires. Post only the
-corrections the review's own rules settle without a judgement call; anything that needs a
-decision goes in the report under queries, with the question stated. $NO_PAYMENTS
+intercompany reconciliation as the standard check the skill requires. Post the
+corrections the review's own rules settle without a judgement call; a correction that
+needs a decision is answered from the evidence and posted or queried as
+scripts/resolve_gate.py says, the question and your proposed answer stated. $NO_PAYMENTS
 $RATE_LIMIT $CHANNEL"
     ;;
 

@@ -56,7 +56,8 @@ General rules that sit on top of the method:
    recognition matrix and the supplier entry, which may name the entity.
 4. **Legal and professional fees go to the entity the advice is for**, as the
    invoice says, even where the supplier entry names a default.
-5. **Anything ambiguous is queried, never guessed.**
+5. **Anything ambiguous is answered from the evidence and graded, or queried;
+   never guessed** (CLAUDE.md, "Queries: answer them before asking them").
 
 ## Account table: cost category to account, per entity
 
@@ -362,7 +363,8 @@ it.** Find the original debit in Xero first and copy its shape:
   and the supplier's own invoice; a booking platform's invoice and the
   merchant's) are one cost: compare the invoice number printed inside both.
 - **Bills are created AUTHORISED with the source document attached.**
-  Anything the agent is unsure of goes to the queried list instead.
+  Anything the agent is unsure of goes through the gate in CLAUDE.md, and
+  whatever the gate does not clear goes to the queried list instead.
 
 ## Staff expenses follow the employing entity
 

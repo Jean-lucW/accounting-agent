@@ -54,7 +54,9 @@ home rather than copy it.
 ## Unfilled means "no rule"
 
 Every section marked `<!-- FILL IN -->` that you have not written is treated
-as **no rule**: the agent does not guess, it queries an admin in Slack and
+as **no rule**: the agent does not guess. It answers what the evidence
+settles (the gate in CLAUDE.md, "Queries: answer them before asking them"),
+and queries an admin in Slack about the rest, with its proposed answer, and
 registers the query. A half-filled folder still works; it just asks more
 often. Delete a section that genuinely does not apply to your group.
 

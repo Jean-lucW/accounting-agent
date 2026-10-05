@@ -154,6 +154,36 @@ config.reload()
 check(config.fy_year_for(D(2026, 7, 1)) == 2027 and config.fy_start_for(D(2026, 7, 1)) == D(2026, 7, 1),
       "06-30 year end: 1 July opens the financial year ending the next June")
 
+# -- [auto_resolve]: what the agent may decide without asking -------------------
+
+refuses(BASE + '[auto_resolve]\nact_from = "low"\n', "acting on low-confidence answers")
+refuses(BASE + '[auto_resolve]\nact_from = "medium"\nmedium_limit = -1\n', "a negative limit")
+refuses(BASE + '[auto_resolve]\nact_from = "medium"\nhigh_limit = "lots"\n', "a limit that is not a number")
+
+with_config(BASE)
+config.reload()
+check(config.resolve_action("high", 10)[0] == "query", "no [auto_resolve] section: every answer is queried")
+
+with_config(BASE + '[auto_resolve]\nact_from = "medium"\nmedium_limit = 2500\nhigh_limit = 25000\n')
+config.reload()
+check(config.resolve_action("high", 24000)[0] == "act", "high under the high limit: act")
+check(config.resolve_action("high", 26000)[0] == "query", "high over the high limit: query")
+check(config.resolve_action("medium", 2000)[0] == "confirm", "medium under the medium limit: act and confirm")
+check(config.resolve_action("medium", 3000)[0] == "query", "medium over the medium limit: query")
+check(config.resolve_action("medium", -2000)[0] == "confirm"
+      and config.resolve_action("medium", -3000)[0] == "query", "a credit is limited by its size")
+check(config.resolve_action("low", 1)[0] == "query", "low: always query")
+check("USD 2,500.00" in config.resolve_action("medium", 3000)[1], "the reason names the limit and currency")
+
+with_config(BASE + '[auto_resolve]\nact_from = "high"\n')
+config.reload()
+check(config.resolve_action("high", 10**9)[0] == "act", "no limits set: high acts at any size")
+check(config.resolve_action("medium", 1)[0] == "query", "act_from high: medium is queried")
+
+os.environ["AGENT_GROUP_CONFIG"] = str(ROOT / "config" / "group.example.toml")
+config.reload()
+check(config.auto_resolve()["act_from"] == "medium", "the example acts from medium")
+
 print()
 print("PASS" if not FAILS else f"FAIL ({len(FAILS)})")
 sys.exit(1 if FAILS else 0)

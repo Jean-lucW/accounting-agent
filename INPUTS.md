@@ -180,6 +180,11 @@ rest over time. For each supplier:
 - [ ] **O** Who receives the list of unpaid bills → `[accounts_payable] unpaid_notify`
 - [ ] **O** Nicknames, keyed by display name → `[slack.nicknames]`
 - [ ] **O** Anyone the agent must never message under any rule → `never_message`
+- [ ] **O** How much the agent may decide without asking: the lowest
+      confidence it acts on alone, the amount above which it asks anyway,
+      and how long an admin has to overrule a decision → `[auto_resolve]`
+      `act_from`, `medium_limit`, `high_limit`, `confirm_days` (left out:
+      every question goes to a person)
 
 ## 11. Payroll
 
@@ -302,10 +307,11 @@ rule in the file shown.
 - §5: the account table.
 
 **Everything else can wait.** Every section left as `<!-- FILL IN -->`
-means "no rule". The agent does not guess: it asks an admin in Slack and
-records the question in the outstanding-items register. When the admin
-answers, the run writes the ruling into the file that owns the subject, so
-the rules grow from use. A half-filled `rules/` folder is normal for the
+means "no rule". The agent does not guess: it answers what the evidence
+settles, within the limits in `[auto_resolve]`, and asks an admin in Slack
+about the rest, recording the question in the outstanding-items register.
+When the admin answers, the run writes the ruling into the file that owns
+the subject, so the rules grow from use. A half-filled `rules/` folder is normal for the
 first weeks.
 
 **What never goes in these files:** secrets. API keys and tokens go in `.env`

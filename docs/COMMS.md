@@ -420,8 +420,9 @@ UTC, CET or EST.
 
 ### A bookkeeping run's report goes in the channel
 
-The whole report (bookkept, bill payments, not attempted, blocked, queries,
-manual, chased, from users, wrote back, every section it has) is posted to
+The whole report (bookkept, resolved, to confirm, bill payments, not
+attempted, blocked, queries, manual, chased, from users, wrote back, every
+section it has) is posted to
 the channel as **two messages**: a top-level message that is only the
 headline,
 
@@ -608,6 +609,8 @@ The standard headings, in this order. Use only the ones with content:
 | Heading | What goes in it |
 |---|---|
 | **bookkept** | posted, done, nothing needed from anyone |
+| **resolved** | a question the run would have asked, answered by the run at high confidence and acted on: the answer, then the evidence in one clause |
+| **to confirm** | the same at medium confidence: posted, and waiting on an admin's yes or no, with what to reply |
 | **bill payments** | an open bill paid from another entity's bank: the payer's spend money is posted, the bill is named in full, and the instruction to reconcile it to intercompany by hand (`bill-payments` skill) |
 | **not attempted** | in scope but never started, and why in four words |
 | **blocked** | tried, could not, and the specific thing standing in the way |
@@ -622,11 +625,17 @@ nobody tried; the other says it was tried and failed. Conflating them hides
 which of the two the reader has to act on.
 
 ```
-bookkeeping · 14 bookkept · 2 blocked · 3 queries · 1 manual · check PASS
+bookkeeping · 14 bookkept · 3 resolved · 1 to confirm · 2 blocked · 1 query · 1 manual · check PASS
 
 **bookkept**
 • Contoso Cloud · 04 Sep · EUR 1,240.00 · paid OpCo EU · recognised OpCo EU · INV-1002
 • Tailspin Telecom · 02 Sep · USD 96.00 · paid OpCo US · recognised OpCo US · INV-1005
+
+**resolved**
+• OpCo US, the invoice is billed to it and its last three bills sit there · Fabrikam Travel · 03 Sep · USD 410.00 · paid OpCo US · recognised OpCo US · INV-1007
+
+**to confirm**
+• Software (6300) in OpCo EU, a new supplier selling the same tool as Litware Software. Reply yes, or the right account · Northwind Store · 06 Sep · EUR 180.00 · paid OpCo EU · recognised OpCo EU · INV-1008
 
 **not attempted**
 • the July Contoso Cloud invoices for OpCo US, deferred to the August review
@@ -646,13 +655,26 @@ bookkeeping · 14 bookkept · 2 blocked · 3 queries · 1 manual · check PASS
 • the bookkeeper for the 28 Aug Adventure Works Hotels receipt, HoldCo
 ```
 
-### `queries` and `manual`, in every domain, in every message
+### `queries`, `to confirm` and `manual`, in every domain, in every message
 
-Anything a message leaves with a person sits under one of two headings and
-nowhere else. `queries` is a question waiting on an answer; `manual` is an
-action waiting on a pair of hands. They are two sections, never one: a
-question nobody has answered and a job nobody has done are different states
-and the reader acts on each differently.
+Anything a message leaves with a person sits under one of three headings and
+nowhere else. `queries` is a question waiting on an answer; `to confirm` is
+a decision the run already made and posted, waiting on an admin's yes or no;
+`manual` is an action waiting on a pair of hands. They are three sections,
+never one: a question nobody has answered, a posting nobody has checked and a
+job nobody has done are different states and the reader acts on each
+differently.
+
+`resolved` and `to confirm` exist so that `queries` stays short. A run
+answers a question itself before it asks it (CLAUDE.md, "Queries: answer them
+before asking them"), so what reaches `queries` is what the evidence could
+not settle, and each one carries the run's proposed answer:
+
+```
+no    Litware Software, which entity - 05 Sep, USD 3,400.00, INV-1006
+yes   Litware Software, OpCo EU or OpCo US? Proposed OpCo EU (low): billed to
+      OpCo EU, paid by OpCo US's card · 05 Sep · USD 3,400.00 · INV-1006
+```
 
 This holds for **every message, in every domain**: a bookkeeping run, a
 report, a reconciliation, a review, a focused run, an answer in a DM thread.
@@ -661,9 +683,10 @@ it under `blocked` or `flagged`, has hidden it. If the section has no content
 it is dropped, like any other, except `queries`, where `nothing queried` is
 information and the line stays.
 
-The two headings carry the same lines the standing register does, so the
-message and `scripts/outstanding.py add --kind queried|manual` agree with
-each other. Registering the line and writing the section are the same step.
+The three headings carry the same lines the standing register does, so the
+message and `scripts/outstanding.py add --kind queried|decided|manual` agree
+with each other. Registering the line and writing the section are the same
+step. `resolved` is not registered: nothing is left with anyone.
 
 For a focused run the headline is the task in a handful of words, then the
 answer, then the evidence, nothing else.

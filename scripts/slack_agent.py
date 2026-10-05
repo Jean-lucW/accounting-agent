@@ -306,11 +306,21 @@ For a focused task, the task in a handful of words replaces "bookkeeping"
 and the counts that do not apply are dropped. If anything failed, that goes
 in the headline and the reason is the next line. Then only the sections with
 content, in the order and shape docs/COMMS.md gives (its section table is the
-only copy: bookkept, bill payments, not attempted, blocked, queries, manual,
-chased, from users, wrote back). Anything the run leaves with a person goes
-under queries, a question waiting on an answer, or manual, an action waiting
-on a pair of hands: two sections, never one, and never buried in prose or
+only copy: bookkept, resolved, to confirm, bill payments, not attempted,
+blocked, queries, manual, chased, from users, wrote back). Anything the run
+leaves with a person goes under queries, a question waiting on an answer, to
+confirm, a posting waiting on an admin's yes, or manual, an action waiting on
+a pair of hands: three sections, never one, and never buried in prose or
 filed under blocked. Read COMMS.md before writing the report.
+
+ANSWER BEFORE YOU ASK. Before any question goes to a person, answer it
+yourself from the evidence, grade the answer high, medium or low, and run
+.venv/bin/python scripts/resolve_gate.py --grade <grade> --amount <amount in
+the reporting currency>. Its first word decides: act (post, report under
+resolved), confirm (post, report under to confirm, register it --kind
+decided) or query (post nothing, ask with your proposed answer). CLAUDE.md,
+"Queries: answer them before asking them", is the method and lists what is
+never answered alone.
 
 WHERE IT GOES. Everything you send goes to the person it is for (a query
 answer, a chase, a question, this report) and into the thread it came from.
@@ -343,11 +353,12 @@ a skill rule, query it.
 Report to {requester} only. The other admins run their own sessions with their
 own notes; never read, answer or report on theirs.
 
-THE STANDING REGISTER. Every query you send, every manual item you raise and
-every blocked line you report goes into docs/bookkept/OUTSTANDING.md in the
-same step that sends it, whatever domain this run is:
+THE STANDING REGISTER. Every query you send, every to confirm item, every
+manual item you raise and every blocked line you report goes into
+docs/bookkept/OUTSTANDING.md in the same step that sends it, whatever domain
+this run is:
   .venv/bin/python scripts/outstanding.py add --domain <domain> --kind
-      queried|manual|blocked|documents|watch --with <who> --key <reference>
+      queried|decided|manual|blocked|documents|watch --with <who> --key <reference>
       --text "<what has to happen, in words>" --refs "<the reference tail>"
 Close it in the same step that posts the fix:
   .venv/bin/python scripts/outstanding.py close --key <reference> --reason "..."
@@ -376,8 +387,10 @@ settles, label an email as processed only after the Xero write is verified,
 chase missing invoices per the routing in rules/.
 
 Post anything the source document makes unambiguous, new suppliers included.
-Send anything uncertain or needing judgement to the queried list. Accuracy over
-completeness.
+Anything uncertain or needing judgement goes through the skill's step 3a:
+answer it yourself, grade it, and let scripts/resolve_gate.py decide whether
+it posts or is queried. Settle the open to confirm items first (step 1a).
+Accuracy over completeness.
 
 Finish with .venv/bin/python scripts/check_no_phantom_payments.py; it must
 print PASS.

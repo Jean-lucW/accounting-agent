@@ -57,7 +57,9 @@ in Xero.
    subagent transcribes documents in parallel and decides nothing.
 5. **Decide and post.** The session picks entity and account from `rules/`,
    checks Xero for a duplicate, and posts an AUTHORISED bill with the document
-   attached. If the rules do not answer, it asks an admin in Slack.
+   attached. If the rules do not answer, it answers from the evidence and
+   grades its answer: high is posted, medium is posted for an admin to
+   confirm, low is asked in Slack with the proposed answer.
 6. **Close the loop.** Open bills are compared with the bank lines; a bill
    paid by another entity gets the intercompany entry and a person reconciles
    it. Every question or manual task goes on an outstanding-items register.

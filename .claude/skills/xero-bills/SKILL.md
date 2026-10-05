@@ -19,7 +19,8 @@ to answer it.
 
 Load the `xero` skill first (API surface, safety rules) and the intake rules
 in `rules/EXPENSES.md`. **Accuracy is the priority**: a queried invoice is
-better than a misallocated bill.
+better than a misallocated bill. Step 3a decides which questions the run
+answers itself and which still go to a person.
 
 Where this skill says "the rules", it means the group's own files:
 
@@ -125,6 +126,9 @@ Per run, in this order:
 1. **Prune, then read the ledger**: `.venv/bin/python scripts/ledger_prune.py`
    deletes every entry and every run section older than 7 days; then read
    what is left, whole.
+1a. **Settle the open `to confirm` items** from earlier runs (step 3a, "Settling
+   earlier `to confirm` items") before any new invoice is opened: an overrule
+   changes how this run codes the same supplier.
 2. **Completeness sweep (metadata only, minimise tokens):** list the last
    7 days (the ledger's own window, one rolling window for both) of (a) Slack
    messages to the bot with attachment counts and (b) accounting inbox
@@ -466,12 +470,79 @@ Apply, in order (full detail in `rules/EXPENSES.md`):
 9. **Multi-entity invoices**: one invoice covering costs several entities
    bear is split only the way `rules/GROUP.md` or `rules/INTERCOMPANY.md`
    says (one entity books the bill and recharges, or each entity books its
-   share). Without a rule, it is a query.
+   share). Without a rule, it goes through step 3a, where it grades low.
 
-Confidence: every allocation gets **high / medium / low**. Low-confidence or
-conflicting signals (sender entity differs from invoice billing entity,
-mapping differs from invoice content) go to the queried list with a stated
-question, not a bill.
+## 3a. Answer the question before asking it
+
+Step 3 ends in a decision or a question. The question is the last resort:
+before one goes to anyone, answer it yourself, grade the answer, and let the
+gate decide. CLAUDE.md, "Queries: answer them before asking them", holds the
+grades and the list of what is never answered alone; this section is how a
+bookkeeping run applies them.
+
+1. **State the question and its candidate answers**: which entity, which
+   account, prepaid or not, bill or spend money.
+2. **Work the evidence for each candidate, strongest first**:
+   - the bank: who paid, from which card, whether a refund landed;
+   - the document: the bill-to entity, the seller's tax registration, the
+     period printed, what was supplied;
+   - `rules/`: the rule that covers it, read in full rather than grepped
+     (the entity file, the `rules/EXPENSES.md` whitelist, `rules/ALLOCATION.md`);
+   - the supplier's earlier bills in **every** entity (`get_bills` under each
+     contact-name variant), with the account and tax type they used;
+   - the `rules/SUPPLIERS.md` row;
+   - the nearest analogous supplier or rule: the same kind of service in the
+     same entity;
+   - the email thread or Slack message the document came in, and what the
+     sender said.
+3. **Grade it.** Conflicting signals (the sender's entity is not the bill-to
+   entity, the mapping disagrees with the invoice) are no longer a query on
+   sight: the order above settles which signal wins. The grade is medium at
+   best when a weaker signal disagrees, and low when two of equal strength do.
+4. **Run the gate** with the gross amount in the reporting currency,
+   converted at the document date's rate:
+   `.venv/bin/python scripts/resolve_gate.py --grade medium --amount 1240`.
+5. **Follow its first word**, and never argue with it:
+   - `act`: carry on at step 4 like any other invoice. Report it under
+     `resolved`: the answer, the evidence in one clause, the invoice line.
+     Ledger outcome `posted (resolved)`.
+   - `confirm`: the same posting, then report it under `to confirm`, ending
+     with what to reply ("reply yes, or the right entity"), and register it:
+     `scripts/outstanding.py add --domain bookkeeping --kind decided --with admin --key <invoice number> --text "<answer>, <evidence>" --refs "<invoice line>"`.
+     Ledger outcome `posted (to confirm)`.
+   - `query`: post nothing: the queried list, the email left unlabelled, the
+     ledger outcome `queried:`. The question carries the proposed answer and
+     its grade (`docs/COMMS.md`, "`queries`, `to confirm` and `manual`").
+
+**Still always queried or chased, whatever the grade**: an amount, supplier or
+currency the document does not show; a missing invoice (chase it); a possible
+duplicate (step 4: treat it as one and query); a payroll line that is not in
+`rules/PAYROLL.md`'s mapping tables; tax with no document behind it.
+
+### Settling earlier `to confirm` items
+
+At the start of every run (step 1a of the ledger routine):
+
+1. `.venv/bin/python scripts/outstanding.py list --domain bookkeeping --kind decided --json`.
+2. Read the replies to each: the admin notes handed to this run, and the
+   threads of the channel's `BOOKKEEPING RUN` headlines since the oldest item
+   was raised (`conversations.replies`, as the `outstanding-items` skill reads
+   `done`). Only an admin's reply settles one; a user's is evidence.
+3. **Confirmed** (yes, ok, correct): `close --key <ref> --reason "confirmed by
+   <admin>"`, and write the answer back as a rule (step 8).
+4. **Overruled**: correct the posting in this run, close the item, and write
+   the admin's rule back. Wrong account or tracking: update the line in place
+   with the amounts unchanged, which Xero allows even on a paid bill. Wrong
+   entity: void the bill and create it again in the right one, but only while
+   it carries no payment and is not reconciled; the admin's overrule is the
+   explicit instruction the `xero` skill's safety rule 3 asks for, and the
+   report states the correction per `docs/COMMS.md`, "Reporting a
+   correction". One that does is not
+   touched: it becomes a manual item for the user to unmatch first
+   (`outstanding.py update --key <ref> --kind manual --text "..."`).
+5. Then `.venv/bin/python scripts/outstanding.py accept`: whatever is left and
+   has waited `confirm_days` closes as accepted. Report those as one count
+   under `resolved`: `2 to-confirm items accepted, unchallenged for 7 days`.
 
 ## 4. Duplicate guard (VERY IMPORTANT, never skip this step)
 
@@ -586,7 +657,8 @@ attach_file(c, "Invoices", bill["InvoiceID"], file_path)
 ```
 
 - **Create as AUTHORISED** (no draft or manual-approval step). The safety
-  valve is upstream: anything uncertain goes to the queried list, not to Xero.
+  valve is upstream: anything the step 3a gate does not clear goes to the
+  queried list, not to Xero.
 - Always attach the source file to the bill.
 - Deterministic idempotency key so re-runs can't double-create.
 - **NEVER create a payment, and never mark the bill paid** (`xero` skill
@@ -768,10 +840,17 @@ that have content: a bold lowercase heading, bullets underneath. The example
 uses the fictional group in `config/group.example.toml`:
 
 ```
-bookkeeping · 14 bookkept · 2 blocked · 3 queries · 1 manual · check PASS
+bookkeeping · 14 bookkept · 3 resolved · 1 to confirm · 2 blocked · 1 query · 1 manual · check PASS
 
 *bookkept*
 • Contoso Cloud · 04 Sep · EUR 1,240.00 · paid OpCo EU · recognised OpCo EU · INV-1002
+
+*resolved*
+• OpCo US, the invoice is billed to it and its last three bills sit there · Fabrikam Travel · 03 Sep · USD 410.00 · paid OpCo US · recognised OpCo US · INV-1007
+• 2 to-confirm items accepted, unchallenged for 7 days
+
+*to confirm*
+• Software (6300) in OpCo EU, a new supplier selling the same tool as Litware Software. Reply yes, or the right account · Northwind Store · 06 Sep · EUR 180.00 · paid OpCo EU · recognised OpCo EU · INV-1008
 
 *bill payments*
 • Adventure Works Hotels · 28 Aug · GBP 240.00 · booked to Travel (5100) · INV-1004 - paid by OpCo US from Mercury on 30 Aug, recognised as a bill in HoldCo, spend money posted in OpCo US to the HoldCo loan account. *Manually reconcile the bill in HoldCo to intercompany.*
@@ -783,7 +862,7 @@ bookkeeping · 14 bookkept · 2 blocked · 3 queries · 1 manual · check PASS
 • the tax split on the laptop bill cannot post, the 31 Mar lock date rejects it - INV-1001, DR Input VAT (2250) / CR Computer Equipment (1500), GBP 480.00
 
 *queries*
-• Litware Software, which entity - 05 Sep, USD 3,400.00, INV-1006
+• Litware Software, OpCo EU or OpCo US? Proposed OpCo EU (low): billed to OpCo EU, paid by OpCo US's card · 05 Sep · USD 3,400.00 · INV-1006
 
 *manual*
 • reconcile the HoldCo Adventure Works Hotels bill to intercompany - INV-1004
@@ -801,11 +880,11 @@ bookkeeping · 14 bookkept · 2 blocked · 3 queries · 1 manual · check PASS
 Every rule for these lines lives in `docs/COMMS.md` and nowhere else: read it
 before writing the report, do not work from memory.
 
-**Register what the report leaves with a person.** Every `queries`,
-`manual` and `blocked` line is added to the outstanding register in the same
-step that writes it (`scripts/outstanding.py add --domain bookkeeping --kind
-queried|manual|blocked --with <person> --key <ref> --text "..." --refs
-"..."`), and every item this run resolved is closed
+**Register what the report leaves with a person.** Every `queries`, `to
+confirm`, `manual` and `blocked` line is added to the outstanding register in
+the same step that writes it (`scripts/outstanding.py add --domain bookkeeping
+--kind queried|decided|manual|blocked --with <person> --key <ref> --text "..."
+--refs "..."`), and every item this run resolved is closed
 (`scripts/outstanding.py close --key <ref>`). The report and the register
 must agree.
 
@@ -856,6 +935,12 @@ Where each kind of learning belongs:
 | An intercompany routing rule | `rules/INTERCOMPANY.md` |
 | A Xero API quirk, error shape, or workaround | the `xero` skill's gotchas section |
 | A change to this workflow itself | this file |
+| An admin confirming or overruling a `to confirm` item | the file above that owns the subject, like any other ruling |
+
+The run's own answers are not rulings. A `resolved` answer is written back
+only where step 3's existing licence covers it (a new supplier's row in
+`rules/SUPPLIERS.md`); a `to confirm` item becomes a rule only when an admin
+answers it, and one accepted by silence never does.
 
 How to write it so it is actually useful later:
 
