@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1035" viewBox="0 0 1600 1035">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#55606e"/></marker></defs>
+<rect width="1600" height="1035" fill="#ffffff"/>
+<text x="800.0" y="42" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="26" font-weight="bold" fill="#1a1a1a" text-anchor="middle">Accounting Agent: how data gets in, gets processed, and gets out</text>
+<text x="800.0" y="68" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#555" text-anchor="middle">Every arrow is a real data flow. Yellow boxes are the only things an adopting company writes.</text>
+<text x="180.0" y="104" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#5b6b82" text-anchor="middle">DATA IN</text>
+<text x="800.0" y="104" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2f6fbf" text-anchor="middle">THE AGENT (runs on your server)</text>
+<text x="1420.0" y="104" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#2f8f46" text-anchor="middle">DATA OUT</text>
+<rect x="30" y="120" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="144" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Slack</text>
+<text x="44" y="163.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">Admins, users and read-only users:</text>
+<text x="44" y="180.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">commands, questions, answers, invoice</text>
+<text x="44" y="196.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">files</text>
+<rect x="30" y="232" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="256" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Gmail inbox</text>
+<text x="44" y="275.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">Supplier invoices and receipts emailed to</text>
+<text x="44" y="292.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">the accounting inbox</text>
+<rect x="30" y="344" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="368" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Bank APIs (read-only)</text>
+<text x="44" y="387.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">Revolut and Mercury: every settled</text>
+<text x="44" y="404.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">movement on every account</text>
+<rect x="30" y="456" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="480" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Bank statement CSVs</text>
+<text x="44" y="499.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">For banks without an API, or history</text>
+<text x="44" y="516.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">before the API cut-over</text>
+<rect x="30" y="568" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="592" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Google Drive</text>
+<text x="44" y="611.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">Payroll documents, contracts and staff</text>
+<text x="44" y="628.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">files</text>
+<rect x="30" y="680" width="300" height="96" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="704" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1f2a3a" text-anchor="start">Xero (read)</text>
+<text x="44" y="723.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">Bills, invoices, journals, balances,</text>
+<text x="44" y="740.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#1f2a3a" text-anchor="start">chart of accounts, per entity</text>
+<rect x="1270" y="120" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="144" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Xero (write)</text>
+<text x="1284" y="163.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">AUTHORISED bills with the document</text>
+<text x="1284" y="180.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">attached, spend money, intercompany</text>
+<text x="1284" y="196.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">journals. Never a payment.</text>
+<rect x="1270" y="232" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="256" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Excel workbooks</text>
+<text x="1284" y="275.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">Bills payable, prepayments, accruals,</text>
+<text x="1284" y="292.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">deposits, intercompany (one tab per</text>
+<text x="1284" y="308.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">loan), bank fees</text>
+<rect x="1270" y="344" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="368" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Google Drive</text>
+<text x="1284" y="387.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">Every workbook published to the agent's</text>
+<text x="1284" y="404.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">folder, overwritten each build</text>
+<rect x="1270" y="456" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="480" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Slack channel</text>
+<text x="1284" y="499.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">Run reports, manual items, the</text>
+<text x="1284" y="516.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">outstanding list, answers in the asking</text>
+<text x="1284" y="532.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">thread</text>
+<rect x="1270" y="568" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="592" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Gmail</text>
+<text x="1284" y="611.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">Processed invoice emails labelled as</text>
+<text x="1284" y="628.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">bookkept</text>
+<rect x="1270" y="680" width="300" height="96" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1284" y="704" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#123d1e" text-anchor="start">Git repo</text>
+<text x="1284" y="723.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">Admin rulings written back into rules/</text>
+<text x="1284" y="740.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#123d1e" text-anchor="start">and committed, so the agent learns</text>
+<rect x="400" y="116" width="800" height="680" rx="16" fill="#f7faff" stroke="#2f6fbf" stroke-width="2" stroke-dasharray="2 0"/>
+<circle cx="425" cy="160" r="13" fill="#2f6fbf"/>
+<text x="425" y="165" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">1</text>
+<text x="445" y="165" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2f6fbf" text-anchor="start">TRIGGER</text>
+<rect x="430" y="178" width="360" height="86" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="444" y="202" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#10325c" text-anchor="start">Slack listener</text>
+<text x="444" y="221.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#10325c" text-anchor="start">Checks the whitelist (admin / user / read-only).</text>
+<text x="444" y="238.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#10325c" text-anchor="start">One agent per Slack thread.</text>
+<rect x="810" y="178" width="370" height="86" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="824" y="202" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#10325c" text-anchor="start">Cron schedule</text>
+<text x="824" y="221.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#10325c" text-anchor="start">Daily bookkeeping chain, bills report, balance</text>
+<text x="824" y="238.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#10325c" text-anchor="start">reports, twice-weekly review.</text>
+<circle cx="425" cy="292" r="13" fill="#2f6fbf"/>
+<text x="425" y="297" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">2</text>
+<text x="445" y="297" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2f6fbf" text-anchor="start">START</text>
+<rect x="430" y="308" width="750" height="58" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="444" y="332" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#10325c" text-anchor="start">Session runner</text>
+<text x="444" y="351.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#10325c" text-anchor="start">Lock, log, Xero rate-limit check, then starts a headless Claude Code session for ONE domain.</text>
+<line x1="610" y1="264" x2="610" y2="306" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="995" y1="264" x2="995" y2="306" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<circle cx="425" cy="394" r="13" fill="#2f6fbf"/>
+<text x="425" y="399" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">3</text>
+<text x="445" y="399" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#7048b8" text-anchor="start">DECIDE</text>
+<rect x="430" y="410" width="230" height="70" rx="10" fill="#fff4cc" stroke="#d98c00" stroke-width="1.6"/>
+<text x="444" y="434" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4a3300" text-anchor="start">config/group.toml</text>
+<text x="444" y="453.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">STRUCTURE: entities, banks,</text>
+<text x="444" y="469.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">loans, Slack tiers</text>
+<rect x="430" y="492" width="230" height="70" rx="10" fill="#fff4cc" stroke="#d98c00" stroke-width="1.6"/>
+<text x="444" y="516" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#4a3300" text-anchor="start">rules/</text>
+<text x="444" y="535.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">JUDGEMENT: who books what,</text>
+<text x="444" y="551.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">coding, suppliers, payroll</text>
+<rect x="690" y="410" width="490" height="152" rx="10" fill="#efe7fb" stroke="#7048b8" stroke-width="1.6"/>
+<text x="704" y="434" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#2e1a52" text-anchor="start">Claude Code session</text>
+<text x="704" y="453.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#2e1a52" text-anchor="start"></text>
+<rect x="705" y="445" width="145" height="104" rx="10" fill="#efe7fb" stroke="#7048b8" stroke-width="1.6"/>
+<text x="719" y="469" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2e1a52" text-anchor="start">CLAUDE.md</text>
+<text x="719" y="487.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">The rulebook every</text>
+<text x="719" y="503.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">session reads</text>
+<rect x="860" y="445" width="150" height="104" rx="10" fill="#efe7fb" stroke="#7048b8" stroke-width="1.6"/>
+<text x="874" y="469" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2e1a52" text-anchor="start">Skills</text>
+<text x="874" y="487.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">One workflow per</text>
+<text x="874" y="503.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">domain: bookkeeping,</text>
+<text x="874" y="518.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">reports, interco</text>
+<rect x="1020" y="445" width="148" height="104" rx="10" fill="#efe7fb" stroke="#7048b8" stroke-width="1.6"/>
+<text x="1034" y="469" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2e1a52" text-anchor="start">invoice-extract</text>
+<text x="1034" y="487.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">Reads many documents</text>
+<text x="1034" y="503.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">in parallel, decides</text>
+<text x="1034" y="518.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#2e1a52" text-anchor="start">nothing</text>
+<line x1="805" y1="366" x2="805" y2="408" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="660" y1="445" x2="688" y2="445" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="660" y1="527" x2="688" y2="527" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<circle cx="425" cy="590" r="13" fill="#2f6fbf"/>
+<text x="425" y="595" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">4</text>
+<text x="445" y="595" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#2f6fbf" text-anchor="start">ACT</text>
+<rect x="430" y="606" width="176" height="82" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="444" y="630" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#10325c" text-anchor="start">Connectors</text>
+<text x="444" y="649.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Xero, Gmail, Drive,</text>
+<text x="444" y="665.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Revolut, Mercury</text>
+<rect x="620" y="606" width="176" height="82" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="634" y="630" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#10325c" text-anchor="start">Feeds</text>
+<text x="634" y="649.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Bank feed and bill feed</text>
+<text x="634" y="665.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">per entity</text>
+<rect x="810" y="606" width="176" height="82" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="824" y="630" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#10325c" text-anchor="start">Builders</text>
+<text x="824" y="649.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Reports, interco recon,</text>
+<text x="824" y="665.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">AP check</text>
+<rect x="1000" y="606" width="176" height="82" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="1014" y="630" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#10325c" text-anchor="start">Registers</text>
+<text x="1014" y="649.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Intake ledger,</text>
+<text x="1014" y="665.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">outstanding items</text>
+<line x1="935" y1="562" x2="935" y2="604" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<circle cx="425" cy="716" r="13" fill="#2f6fbf"/>
+<text x="425" y="721" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">5</text>
+<text x="445" y="721" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#c0392b" text-anchor="start">GUARDRAILS (every step)</text>
+<rect x="430" y="732" width="750" height="52" rx="8" fill="#fde8e8" stroke="#c0392b" stroke-width="1.6"/>
+<text x="444" y="756" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#5c1410" text-anchor="start"></text>
+<text x="444" y="775.5" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#5c1410" text-anchor="start"></text>
+<text x="805" y="755" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#5c1410" text-anchor="middle">Hooks block any payment and any write in read-only sessions  ·  bank clients are GET-only</text>
+<text x="805" y="773" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="normal" fill="#5c1410" text-anchor="middle">Duplicate check before every create  ·  run ends only when the phantom-payment check prints PASS</text>
+<line x1="330" y1="168" x2="428" y2="201" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="330,280 365,280" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="330,392 365,392" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="330,504 365,504" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="330,616 365,616" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="330,728 365,728" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="365,280 365,728" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="365,647 380,647" fill="none" stroke="#55606e" stroke-width="2"/>
+<line x1="380" y1="647" x2="428" y2="647" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1180,647 1235,647" fill="none" stroke="#55606e" stroke-width="2"/>
+<polyline points="1235,168 1235,728" fill="none" stroke="#55606e" stroke-width="2"/>
+<line x1="1235" y1="168" x2="1268" y2="168" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1235" y1="280" x2="1268" y2="280" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1235" y1="392" x2="1268" y2="392" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1235" y1="504" x2="1268" y2="504" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1235" y1="616" x2="1268" y2="616" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<line x1="1235" y1="728" x2="1268" y2="728" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<polyline points="1180,486 1235,486" fill="none" stroke="#55606e" stroke-width="2"/>
+<text x="30" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#333" text-anchor="start">KEY</text>
+<rect x="90" y="807" width="22" height="16" rx="3" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.5"/>
+<text x="120" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">Where data comes from</text>
+<rect x="345" y="807" width="22" height="16" rx="3" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.5"/>
+<text x="375" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">Agent machinery (shipped)</text>
+<rect x="600" y="807" width="22" height="16" rx="3" fill="#efe7fb" stroke="#7048b8" stroke-width="1.5"/>
+<text x="630" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">Claude: the decisions</text>
+<rect x="855" y="807" width="22" height="16" rx="3" fill="#fff4cc" stroke="#d98c00" stroke-width="1.5"/>
+<text x="885" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">You fill this in</text>
+<rect x="1110" y="807" width="22" height="16" rx="3" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.5"/>
+<text x="1140" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">What the agent produces</text>
+<rect x="1365" y="807" width="22" height="16" rx="3" fill="#fde8e8" stroke="#c0392b" stroke-width="1.5"/>
+<text x="1395" y="820" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#333" text-anchor="start">Safety enforced in code</text>
+<text x="30" y="860" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a1a1a" text-anchor="start">EXAMPLE: one supplier invoice, end to end</text>
+<rect x="30" y="878" width="206" height="92" rx="10" fill="#eef2f7" stroke="#5b6b82" stroke-width="1.6"/>
+<text x="44" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#1f2a3a" text-anchor="start">1. Arrives</text>
+<text x="44" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1f2a3a" text-anchor="start">PDF emailed to the inbox, or</text>
+<text x="44" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1f2a3a" text-anchor="start">dropped in Slack</text>
+<line x1="238" y1="924" x2="252" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="254" y="878" width="206" height="92" rx="10" fill="#efe7fb" stroke="#7048b8" stroke-width="1.6"/>
+<text x="268" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#2e1a52" text-anchor="start">2. Read</text>
+<text x="268" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#2e1a52" text-anchor="start">invoice-extract turns it</text>
+<text x="268" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#2e1a52" text-anchor="start">into supplier, date, amount,</text>
+<text x="268" y="953.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#2e1a52" text-anchor="start">tax lines</text>
+<line x1="462" y1="924" x2="476" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="478" y="878" width="206" height="92" rx="10" fill="#fff4cc" stroke="#d98c00" stroke-width="1.6"/>
+<text x="492" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#4a3300" text-anchor="start">3. Decide</text>
+<text x="492" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">Entity and account chosen</text>
+<text x="492" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">from rules/; unsure means a</text>
+<text x="492" y="953.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#4a3300" text-anchor="start">Slack question</text>
+<line x1="686" y1="924" x2="700" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="702" y="878" width="206" height="92" rx="10" fill="#fde8e8" stroke="#c0392b" stroke-width="1.6"/>
+<text x="716" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#5c1410" text-anchor="start">4. Check</text>
+<text x="716" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5c1410" text-anchor="start">Already in Xero? The</text>
+<text x="716" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5c1410" text-anchor="start">duplicate guard says no</text>
+<line x1="910" y1="924" x2="924" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="926" y="878" width="206" height="92" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="940" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#123d1e" text-anchor="start">5. Post</text>
+<text x="940" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">AUTHORISED bill in the right</text>
+<text x="940" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">entity, PDF attached, email</text>
+<text x="940" y="953.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">labelled</text>
+<line x1="1134" y1="924" x2="1148" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="1150" y="878" width="206" height="92" rx="10" fill="#e3f0ff" stroke="#2f6fbf" stroke-width="1.6"/>
+<text x="1164" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#10325c" text-anchor="start">6. Match</text>
+<text x="1164" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">Bank feed shows who paid;</text>
+<text x="1164" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">paid by another entity gets</text>
+<text x="1164" y="953.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#10325c" text-anchor="start">the interco leg</text>
+<line x1="1358" y1="924" x2="1372" y2="924" stroke="#55606e" stroke-width="2" marker-end="url(#ah)"/>
+<rect x="1374" y="878" width="206" height="92" rx="10" fill="#e6f6ea" stroke="#2f8f46" stroke-width="1.6"/>
+<text x="1388" y="902" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#123d1e" text-anchor="start">7. Report</text>
+<text x="1388" y="921.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">Line in the Slack run</text>
+<text x="1388" y="937.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">report; a person reconciles</text>
+<text x="1388" y="953.0" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#123d1e" text-anchor="start">the bank line</text>
+<text x="800.0" y="1013" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#666" text-anchor="middle">Detail diagrams for each part follow below in ARCHITECTURE.md. Setup: docs/setup/. Adapting to your group: ADAPTING.md.</text>
+</svg>

@@ -1,0 +1,699 @@
+# =============================================================================
+# GROUP CONFIGURATION: the one file that describes YOUR group to the agent.
+#
+#   cp config/group.example.toml config/group.toml     then edit group.toml
+#
+# Any number of entities and any ISO 4217 currency work; the three below are
+# only an illustration.
+#
+# REQUIRED for a first run:
+#   [company]            name, reporting_currency, timezone, accounting_inbox
+#   [[entities]]         one block per Xero organisation, each with key,
+#                        xero_name and base_currency (rules_file must exist)
+#   [slack]              channel_id and at least one admin
+#   [[domains]]          the bookkeeping domain at least
+# OPTIONAL (sensible defaults when left out):
+#   [[entities.bank_accounts]], [entities.payroll_controls], [[intercompany]],
+#   [[non_group]], [intercompany_settings], [auto_resolve], [accounts_payable],
+#   [reports], [drive], [bank_fees], [safety], [models], [bank_reconcile],
+#   [posting], [investigation], [outstanding_check], [review_checks],
+#   [daily_chain], [briefing]
+#
+# Everything structural reads from here: which Xero organisations exist, their
+# short codes and currencies, which bank accounts feed which entity, every
+# intercompany loan pair (and so every line-by-line intercompany workbook tab),
+# who may command the agent in Slack, payroll control accounts, and the
+# accounts payable and report settings. Change this file and every script,
+# report and reconciliation picks up the new structure on its next run.
+#
+# This file holds NO secrets (tokens and keys live in .env), but it does
+# describe your group: entity names, account codes, the people allowed to
+# command the agent. config/group.toml is therefore gitignored. It lives only
+# on the laptop and the server (copy it across with scp), and the whole
+# deployment, this repository included, must be a PRIVATE repo.
+#
+# Prose rules (what each entity recognises, how costs are coded and
+# allocated, supplier rules, staff and payroll logic) live in rules/, not here.
+# See ADAPTING.md for the full checklist.
+#
+# The values below describe a FICTIONAL three-entity group so you can see the
+# shape. Replace all of them.
+# =============================================================================
+
+[company]
+name = "Example Group"                     # how the agent names the group in reports
+reporting_currency = "USD"                 # REQUIRED, any ISO 4217 code; group-wide figures are shown in it
+timezone = "UTC"                           # any IANA timezone; report headings and run stamps
+financial_year_end = "12-31"               # MM-DD, the last day of the group's financial year
+                                           # (default "12-31"; e.g. "03-31", "06-30"). Sets the
+                                           # financial year and quarters the recon window, the
+                                           # interco workbook and the standing reports start from.
+accounting_inbox = "accounting@example.com"  # the mailbox invoices are sent to (Gmail)
+processed_label = "Bookkept"               # Gmail label put on an email once its invoice is in Xero
+# records_from = "2025-01-01"              # earliest date bank and AP checks look back to
+                                           # (default: start of the previous financial year)
+
+# -----------------------------------------------------------------------------
+# ENTITIES: one block per Xero organisation the agent bookkeeps.
+#
+#   key            short code used everywhere (file names, CLI args, workbook tabs).
+#                  UPPER_SNAKE, stable: renaming it orphans the bank feed files.
+#   xero_name      the organisation name EXACTLY as Xero shows it
+#   short          how reports and messages name it
+#   aliases        other words people use for it in Slack ("parent", "us")
+#   base_currency  REQUIRED: the Xero organisation's base currency (any ISO 4217 code)
+#   country        optional, ISO 3166 code, for the reader
+#   rules_file     the entity's own prose rules (default rules/entities/<KEY>.md;
+#                  deploy/preflight.sh fails when it is missing)
+#   reconcile_check  optional, how scripts/bank_reconcile_check.py treats the entity:
+#                  "full" (default with a bank account: its banks and Xero are read),
+#                  "documents" (default with none: only its open bills and invoices are
+#                  read, for the cross-entity search) or "off" (never read, an entity
+#                  you keep out of bookkeeping scope)
+#   required_tracking  optional, tracking categories every line posted to the entity
+#                  must carry, e.g. ["Region"]; scripts/post_bills.py refuses a
+#                  line without one. Leave out when the entity has none.
+# -----------------------------------------------------------------------------
+
+# Account codes in this file (090, 814, 825, 1000, 2100, 1610, 4900 ...) are illustrative; use your own chart.
+[[entities]]
+key = "HOLDCO"
+xero_name = "Example Holdings Limited"
+short = "HoldCo"
+aliases = ["holdings", "parent"]
+base_currency = "GBP"
+country = "GB"
+rules_file = "rules/entities/HOLDCO.md"
+
+  # Bank accounts. provider = "revolut" | "mercury" | "csv".
+  #   slug               picks the credentials in .env (REVOLUT_<SLUG>_*, MERCURY_<SLUG>_KEY)
+  #   statement_csv      saved statement export under data/statements/ (optional)
+  #   csv_until          last day read from the CSV; the API takes over the day after.
+  #                      Leave out to use the API for everything.
+  #   xero_account_code  the Xero bank account this feeds (for reconciliation)
+  #   currency           optional ISO code: read only this currency's sub-account
+  #                      (a multi-currency Revolut account fed into one Xero bank
+  #                      account per currency gets one block per currency).
+  #                      Leave out to read every currency on the account.
+  #   statement_name     optional: the account's name as the statement or the bank API
+  #                      gives it ("Main", "Checking xx1234"). Needed only to tell two
+  #                      blocks of one slug apart (several Mercury accounts).
+  #   xero_account       optional: the Xero bank account's name, when the code alone
+  #                      does not find it. The bank reconcile check maps a statement
+  #                      line to Xero through xero_account_code or xero_account and
+  #                      refuses a line on an account it cannot map, never guessing.
+  [[entities.bank_accounts]]
+  label = "Revolut"
+  provider = "revolut"
+  slug = "holdco"
+  statement_csv = "holdco.csv"
+  csv_until = "2025-12-31"
+  xero_account_code = "090"
+  currency = "GBP"
+
+  # Payroll control accounts: code -> what a residual balance may legitimately be.
+  # Checked by scripts/check_payroll_controls.py and exempt from the phantom
+  # payment check (bills on these are cleared by journal, not by the bank).
+  [entities.payroll_controls]
+  "814" = { name = "Wages Payable", residual = "nothing once the monthly pay run has cleared the bank" }
+  "825" = { name = "Payroll Taxes Payable", residual = "the current month's accrual until the tax authority payment" }
+
+[[entities]]
+key = "OPCO_US"
+xero_name = "Example Operations Inc."
+short = "OpCo US"
+aliases = ["us", "inc"]
+base_currency = "USD"
+country = "US"
+rules_file = "rules/entities/OPCO_US.md"
+
+  [[entities.bank_accounts]]
+  label = "Mercury"
+  provider = "mercury"
+  slug = "opcous"
+  xero_account_code = "1000"
+  currency = "USD"
+
+  [entities.payroll_controls]
+  "2100" = { name = "Payroll Liabilities", residual = "the current pay period until the payroll provider debit" }
+
+[[entities]]
+key = "OPCO_EU"
+xero_name = "Example Operations B.V."
+short = "OpCo EU"
+aliases = ["eu", "netherlands"]
+base_currency = "EUR"
+country = "NL"
+rules_file = "rules/entities/OPCO_EU.md"
+
+  # A bank with no API: statements are dropped in data/statements/ as CSV.
+  [[entities.bank_accounts]]
+  label = "Local bank"
+  provider = "csv"
+  statement_csv = "opco_eu.csv"
+  xero_account_code = "1100"
+  currency = "EUR"
+
+# -----------------------------------------------------------------------------
+# INTERCOMPANY: every intercompany balance-sheet account pair.
+#
+# One block per relationship. The reconciliation (scripts/interco_recon.py)
+# matches the two sides transaction by transaction, and the workbook
+# (scripts/interco_matrix.py) gets one summary cell and one line-by-line tab
+# per block. Add an entity or a loan here and both pick it up.
+#
+#   a, b              entity keys
+#   flavour           your own name for the kind of balance ("loan", "recharge",
+#                     "cost_attribution", "management_fee", ...). Two pairs between
+#                     the same entities must have different flavours.
+#   accounts          { <entity key> = "<Xero account code>" }. An empty string
+#                     marks a mirror account that does not exist yet: the recon
+#                     reports it as a structural gap instead of matching.
+#   payments_enabled  true when the account is payments-enabled in Xero and bills
+#                     are settled against it: the recon then reads Xero payments
+#                     on it too. false skips that read (fewer API calls).
+# -----------------------------------------------------------------------------
+
+[[intercompany]]
+a = "HOLDCO"
+b = "OPCO_US"
+flavour = "loan"
+label = "Intercompany loan"
+accounts = { HOLDCO = "1610", OPCO_US = "2610" }
+payments_enabled = false
+
+[[intercompany]]
+a = "HOLDCO"
+b = "OPCO_EU"
+flavour = "loan"
+label = "Intercompany loan"
+accounts = { HOLDCO = "1620", OPCO_EU = "2620" }
+payments_enabled = false
+
+[[intercompany]]
+a = "HOLDCO"
+b = "OPCO_US"
+flavour = "recharge"
+label = "Shared cost recharges"
+accounts = { HOLDCO = "1611", OPCO_US = "2611" }
+payments_enabled = false
+
+[[intercompany]]
+a = "OPCO_US"
+b = "OPCO_EU"
+flavour = "loan"
+label = "Intercompany loan"
+accounts = { OPCO_US = "1630", OPCO_EU = "" }      # EU mirror not yet opened
+payments_enabled = false
+
+# Accounts whose names look intercompany but are NOT between two group
+# entities: a balance with a party outside the group, such as a loan to a
+# related party or a shareholder loan. Reported, never matched.
+# [[non_group]]
+# entity = "HOLDCO"
+# account = "1650"
+# label = "Loan to related party (outside the group)"
+
+[intercompany_settings]
+fx_gain_loss_account = "4900"        # FX gain/loss account used by the interco FX revaluation
+tolerance_abs = 1.0                  # in reporting currency: a smaller gap is a rounding match
+tolerance_rel = 0.005                # relative tolerance for cross-currency matches
+account_name_pattern = "intercompany|interco|inter-company|group cost|recharge"
+small_break = 500                    # in reporting currency: breaks below this are listed, not escalated
+fx_narration = "FX Adjustment for Intercompany Balance with {counterparty}"
+fx_markers = ["fx adjustment", "revaluation"]   # narration words that mark an FX journal
+sweep_markers = []                   # narration words that mark a periodic balance sweep journal
+stop_words = []                      # extra words ignored when matching narrations across entities
+# default_rates = { EUR = 1.08, GBP = 1.27 }   # fallback rates to reporting currency when Xero gives none
+
+# Tracking on the FX revaluation journal lines, per posting entity: category =
+# option, both already set up in that Xero organisation (two at most). An
+# entity not listed posts its revaluations untracked.
+# [intercompany_settings.fx_tracking]
+# OPCO_EU = { Region = "EU" }
+
+# -----------------------------------------------------------------------------
+# SLACK: who may talk to the agent. Anyone not listed is ignored entirely.
+# Member IDs: Slack profile > three dots > Copy member ID.
+#
+#   admins    every command (run, query, status, notes, clear); their rulings
+#             change the rules; they receive run reports
+#   users     messages captured as shared input a run weighs; no commands
+#   readonly  users plus `query <question>` answered by a read-only session
+# -----------------------------------------------------------------------------
+
+[slack]
+channel_id = ""                      # the one channel runs report into (C...)
+channel_name = "accounting-agent"
+
+[slack.admins]
+# "U0000000001" = "First Admin"
+
+[slack.users]
+# "U0000000002" = "Bookkeeper"
+
+[slack.readonly]
+# "U0000000003" = "Analyst"
+
+# Who to chase for a missing invoice or receipt. Value: Slack member ID.
+# Keys are tried in this order: the cardholder name as the bank feed shows
+# it, then a cost category, then the entity key, then "default".
+[slack.chase_routing]
+# "A. Cardholder" = "U0000000004"
+# travel = "U0000000002"
+# HOLDCO = "U0000000002"
+# default = "U0000000001"
+
+# Optional nicknames, so prompts address people the way they sign. Keyed by
+# the display name used in the tier tables above, not the member ID.
+[slack.nicknames]
+# "Sam Example" = "Sam"
+
+# People the agent must never message directly, whatever a rule says.
+# never_message = ["U0000000009"]
+
+# -----------------------------------------------------------------------------
+# QUERIES THE AGENT ANSWERS ITSELF (CLAUDE.md, "Queries: answer them before
+# asking them"). Before a question goes to a person, the agent answers it from
+# the evidence and grades the answer high, medium or low:
+#   high    acted on, reported under `resolved`
+#   medium  acted on, reported under `to confirm`, registered until an admin
+#           confirms or overrules it
+#   low     queried as before, the agent's proposed answer in the question
+# Leave the section out and every question goes to a person.
+# -----------------------------------------------------------------------------
+
+[auto_resolve]
+act_from = "medium"                  # lowest grade acted on alone: "high", "medium" or "off"
+medium_limit = 2500                  # reporting currency; above it a medium answer is queried (0 = no limit)
+high_limit = 25000                   # reporting currency; above it every answer is queried (0 = no limit)
+confirm_days = 7                     # an unchallenged `to confirm` item closes as accepted after this (0 = never)
+
+# -----------------------------------------------------------------------------
+# ACCOUNTS PAYABLE: the bills report and the bill-payments check.
+# -----------------------------------------------------------------------------
+
+[accounts_payable]
+unpaid_notify = ""                   # Slack member ID to DM the UNPAID bills list to (blank = nobody)
+reconcile_notify = ""                # Slack member ID to DM the reconcile list to, once a day (blank = unpaid_notify)
+lead_days = 7                        # a card charge may precede its invoice by this many days
+leg_window_days = 3                  # posting lag allowed on an intercompany funding leg
+card_lag_days = 3                    # a card payment settles this many days after purchase
+# Extra words, on top of the built-in neutral list (ltd, inc, gmbh, services,
+# group, holdings, international, ...), that are too common among YOUR
+# suppliers to identify one: a bank payee sharing only these words with a
+# supplier is not treated as a name match by the bills report.
+generic_supplier_words = []          # e.g. ["cloud", "software", "consulting"]
+# Classifier tunables of the bills report (defaults shown).
+named_lead_days = 35                 # a line naming the supplier at the bill's exact amount, taken by nothing
+                                     # in Xero, may precede the invoice by this many days (rent paid ahead) ...
+named_lead_min = 1000                # ... but only for a bill of at least this much, in the reporting currency
+named_amount_tolerance = 0.01        # a named transfer within this share of the bill, in its own currency,
+                                     # is the bill (an expense claim reimbursed at a slightly different rate)
+stranger_fx_tolerance = 0.02         # a card charge under another merchant's name is still the bill when it is
+                                     # this close at the day's rate ...
+stranger_days = 4                    # ... and lands within this many days of the bill
+# Suppliers whose repeat bills at the same price are normal, so a bank line
+# already taken by another of their bills is never a DUPLICATE?.
+never_duplicate = []                 # e.g. ["Example Takeaway"]
+# A booking agent's name word -> the merchant words its bookings are charged
+# under on the card (a hotel booked through the agent is charged by the hotel site).
+[accounts_payable.agent_payees]
+# acme = ["hotelsite", "airline"]
+
+  # Bills that are never settled by a bank payment (matched on contact or reference).
+  [[accounts_payable.not_via_bank]]
+  pattern = "payroll"
+  reason = "payroll bill, cleared from the payroll control accounts by journal"
+
+  # Suppliers collected by one monthly debit from a given date: their bills are
+  # MONTHLY DEBIT, never UNPAID and never overdue, and stay out of the payer's list.
+  # [[accounts_payable.periodic_billing]]
+  # entity = "OPCO_US"
+  # pattern = "example rides"
+  # from = "2026-01-01"
+  # reason = "on the supplier's monthly collection: the debit early next month settles it"
+
+# -----------------------------------------------------------------------------
+# POSTING: rules scripts/post_bills.py enforces before it posts a bill. Optional.
+#
+#   restricted_tax_types   tax type = the entity keys that alone may use it on a
+#                          posted line. Empty by default: no restriction.
+# -----------------------------------------------------------------------------
+
+# [posting]
+# restricted_tax_types = { "EXAMPLETAX" = ["OPCO_EU"] }
+
+# -----------------------------------------------------------------------------
+# BANK RECONCILE CHECK: the read-only inference of which bank lines are still
+# open on Xero's reconcile screen (scripts/bank_reconcile_check.py). Every key
+# is optional; the values below are the defaults.
+# -----------------------------------------------------------------------------
+
+# [bank_reconcile]
+# fx_tolerance = 0.02                # a document in another currency fits a line within 2%; one currency is exact to the cent
+# wrong_fx = 0.02                    # a reconciled payment's implied rate this far from the median is suspect
+# wrong_fx_named = 0.02              # the same where the line names the payee
+# reconciled_gap_days = 5            # a reconciled record and its statement line, days apart at most
+# reconciled_gap_named_days = 10     # ... where the payee's name agrees
+# record_gap_days = 5                # an unreconciled record and an open line
+# record_gap_named_days = 45         # ... with the payee's name (a claim dated at the receipt)
+# doc_before_days = 45               # an open document is looked for this far before a line ...
+# doc_after_days = 7                 # ... and this far after
+# feed_lag_days = 2                  # a line this close before a pasted screen may not have reached Xero
+# docs_back_days = 60                # documents of every status read this far before the window
+# window_cap_days = 30               # the bank is never read further back than this
+# watermark_pad_days = 3             # the window opens this many days before the oldest open line
+# pad_days = 10                      # movements read before the window as context
+# narrow_amount = 0.05               # line-match candidates: the amount within 5% ...
+# narrow_named_days = 7              # ... or the name or who paid agreeing within 7 days
+# tip_max = 1.25                     # an agent's pick may be the line at most 25% over the bill (tip, fee)
+# estimate_min = 0.90                # ... or at least 90% of a bill marked an estimate
+# fx_band = 0.05                     # across currencies, 5% either side before any tip
+# line_match_cap = 40                # lines put to the bank-line-match agent per run
+# line_match_candidates = 6          # candidates per line
+# line_match_budget_tokens = 12000   # the payload, estimated as characters / 4
+# line_match_model = "haiku"         # the agent's model; a small one is enough
+# line_match_effort = "medium"
+# line_match_timeout = 300           # seconds
+# line_match_max_usd = 1.00          # the call's own spending cap
+# staff_register = ""                # optional JSON file {"employees": [{"name": "..."}]}: names let a card holder be
+#                                    # recognised on a document. Blank or absent = that signal is skipped.
+# agent_bill_number_initials = ""    # optional regex with ONE group, the card holder's initials in a bill number
+#                                    # the agent made, e.g. '^[A-Z0-9]+-([A-Z]{2,4})-' for SUPPLIER-INITIALS-date. Blank = none.
+
+# -----------------------------------------------------------------------------
+# REVIEW CHECKS: the mechanical checks of the bookkeeping review
+# (scripts/review_checks.py, skill xero-review). Everything here is optional
+# and every list is empty by default, so with no section the script runs the
+# group-neutral checks only (lock date, trial balance sanity, unreconciled
+# lines, ageing, drafts, duplicates, suspense, supplier drift, the account
+# whitelist in rules/EXPENSES.md, capitalisation, transaction type, quarter
+# boundary, payroll controls, documents, intercompany, bank, asset register).
+# Group-specific rules are written here (structure) or in rules/ (judgement).
+# Amounts are in the reporting currency; patterns are case-insensitive regexes.
+# -----------------------------------------------------------------------------
+
+# [review_checks]
+# capitalisation_threshold = 500.0   # per item, at or above is capitalised (keep equal to rules/EXPENSES.md)
+# movement_ratio = 2.5               # a P&L account moved this many times its prior two-month average ...
+# movement_min = 10000.0             # ... and by at least this much
+# suspense_threshold = 0.005         # a suspense or clearing balance above this is a finding
+# drift_min = 100.0                  # a supplier on a new account, at least this much
+# spend_line_min = 50.0              # a spend money line below this is card noise, not a finding
+# spend_money_min = 300.0            # spend money to one supplier and account, at least this much
+# welfare_small = 250.0              # spend money on a welfare account below this is allowed
+# subscription_max = 1000.0          # a steady monthly amount below this is a subscription
+# round_balance_min = 1000.0         # a contact's round-number balance, at least this much
+# far_tolerance = 1.0                # ledger against asset register, in the entity's currency
+# aged_days = 90                     # an open document older than this
+# stale_journal_days = 21            # a DRAFT journal untouched this long
+# stale_bill_draft_days = 14         # a DRAFT or SUBMITTED bill untouched this long
+# unreconciled_old_days = 30         # an unreconciled bank transaction older than this
+#
+# not_duplicates = []                # suppliers whose same-amount bills with distinct numbers are normal
+# twin_reference_pattern = ""        # one capture group: a booking or trip number a platform's invoice
+#                                    # and the merchant's invoice share, e.g. '\b(TRIP-\d{6,})\b'
+# card_charge_number_pattern = ""    # bill numbers made for a card-charge receipt, e.g. '^CC\d{6,}'
+# payroll_sources = []               # payroll providers (contact patterns), besides [[accounts_payable.not_via_bank]]
+# travel_words = []                  # words added to the built-in travel words (hotel, flight, ...)
+# hardware_words = []                # words added to the built-in hardware words (laptop, monitor, ...)
+# small_spend_words = []             # words added to the built-in small card spend (cafe, taxi, ...)
+# invoiceless_words = []             # contacts that never send an invoice (bank, card and plan fees)
+# quarter_exempt_suppliers = []      # bills that name other quarters by design (usage billed in arrears)
+# quarter_exempt_accounts = ["travel"]   # account names whose lines name other quarters by design
+# capitalisable_accounts = ["it costs", "office expenses", "computer expenses", "office supplies"]
+# subscription_accounts = ["it costs", "computer expenses"]
+# welfare_accounts = ["welfare"]
+#
+# Accounts nobody may post to, or that must be archived. A balance or a posting is a finding.
+# [[review_checks.known_bad_accounts]]
+# entity = "HOLDCO"
+# code = "1999"
+# name_pattern = "old loan"          # the account's name must match, since codes are reused across entities
+# why = "redundant duplicate of the intercompany loan 1610; never post"
+# archived = true                    # optional: expected archived, a live account is a finding
+#
+# A clearing account that is meant to fill and empty: judged at month end only.
+# [[review_checks.clearing_accounts]]
+# entity = "HOLDCO"
+# code = "1250"
+#
+# Dated rules. kind: recognise_in | only_accounts | not_accounts | no_bills
+# [[review_checks.cutovers]]
+# kind = "recognise_in"              # matching costs from `from` are recognised only in `entity`
+# entity = "OPCO_US"
+# from = "2027-01-01"
+# match = ["A. Person", "B. Person"] # names or patterns found in the contact, description or narration
+# register_location = ""             # optional: also every name in the staff register with this location
+# exclude = ["C. Person"]
+# why = "the US team's costs sit in OpCo US from January"
+# [[review_checks.cutovers]]
+# kind = "only_accounts"             # bills from matching contacts in `entity` from `from` use only these accounts
+# entity = "OPCO_EU"
+# from = "2027-01-01"
+# match = ["example hosting"]
+# accounts = ["2620"]
+# mirror = { entity = "HOLDCO", account = "4000" }   # optional: HOLDCO also holds a posted journal in the month
+# why = "recognised in HoldCo from January; OpCo EU only passes it through the loan"
+# [[review_checks.cutovers]]
+# kind = "not_accounts"              # matching documents from `from` must not use these accounts
+# entity = "HOLDCO"
+# from = "2027-01-01"
+# match = ["example hosting"]
+# accounts = ["4310"]
+# why = "the recharge to the customer stops from January"
+# [[review_checks.cutovers]]
+# kind = "no_bills"                  # matching bills from `from` should not exist in `entity`
+# entity = "OPCO_US"
+# from = "2027-01-01"
+# match = ["payroll"]
+# exclude = ["provider a"]
+# why = "payroll runs through the control accounts from January"
+#
+# Tracking: every cost line in `entity` needs `category` (FX and gain/loss accounts are excepted).
+# [[review_checks.tracking]]
+# entity = "OPCO_EU"
+# category = "Region"
+# options = ["North", "South"]      # optional: any other option is implausible
+# mismatch = [{ option = "South", currency = "EUR", pattern = "northport" }]   # optional: option vs the record
+#
+# Tax: what no document is needed to see. One block per entity.
+# [[review_checks.tax]]
+# entity = "OPCO_US"
+# no_tax = true                      # any tax amount is a finding: every tax line is part of the cost
+# [[review_checks.tax]]
+# entity = "HOLDCO"
+# base_currency_only = true          # tax on a line in another currency is a finding
+# no_tax_accounts = "bank fee"       # tax on an account whose name matches is a finding
+# allowed_types = ["INPUT2"]         # any other tax type with an amount is a finding
+#
+# Revenue shape: revenue outside it, and (flag_sales) any sales invoice, is a finding.
+# [[review_checks.revenue]]
+# entity = "OPCO_US"
+# allowed_accounts = "management fee|interest"
+# flag_sales = true
+#
+# Routing: lines from matching suppliers must (be_on) or must not (not_be_on) sit on accounts matching.
+# [[review_checks.routing]]
+# entity = "OPCO_EU"                 # optional: every entity when left out
+# supplier_pattern = "example health"
+# account_pattern = "health"
+# must = "be_on"
+# why = "health care goes to the health care account"
+#
+# Assets the register depreciates: one on no method is a finding, and so is a manual journal
+# that credits `accounts` for them (it double counts the register's own depreciation).
+# [[review_checks.register_depreciated]]
+# entity = "HOLDCO"
+# assets = ["FA-0001"]
+# journal_pattern = "right of use|rou"
+# accounts = ["1590"]
+# why = "right of use assets are depreciated by the register, never by journal"
+
+# -----------------------------------------------------------------------------
+# STANDING REPORTS: prepayments, accruals, deposits.
+# Accounts are found by name (Balance Sheet class + words) unless listed here.
+# -----------------------------------------------------------------------------
+
+[reports]
+# from_year = 2025                   # financial year (named by the calendar year it ends in) from
+                                     # which rows are always shown; older inactive rows are dropped
+                                     # (default: the current financial year)
+# first_build_from = "2024-01-01"    # how far back the first build reads documents
+                                     # (default: start of the previous financial year)
+# quarter_end_from = "2025-12"       # keep a copy of each balance report as it stood at every
+                                     # financial quarter end from this month on (quarters follow
+                                     # [company] financial_year_end); blank or absent = no copies
+
+  # The small model that reads a prepayment's period off its invoice when the
+  # line states none. Every key optional; these are the defaults.
+  [reports.period_reader]
+  # model = "haiku"
+  # effort = "low"
+  # max_usd = 2.0                    # cost cap for one entity's call
+  # max_files = 8                    # documents read per row, at most
+  # timeout_seconds = 600
+
+  [reports.prepayments]
+  account_words = ["prepay", "prepaid"]
+  # accounts = { HOLDCO = ["1200"] }   # optional explicit codes per entity
+
+  [reports.accruals]
+  account_words = ["accrual", "accrued"]
+  account_not_words = ["income", "receivable", "revenue"]
+
+  [reports.deposits]
+  account_words = ["deposit"]
+  account_not_words = ["customer", "client"]
+
+# -----------------------------------------------------------------------------
+# GOOGLE DRIVE: where built workbooks are published (optional).
+# -----------------------------------------------------------------------------
+
+[drive]
+publish_folder_id = ""               # the agent's folder on a shared drive; blank = do not publish
+  [drive.subfolders]                 # workbook kind -> subfolder name, created on first publish
+  reports = "Reports"
+  bills = "Bills Payable"
+  intercompany = "Intercompany"
+  bank_fees = "Bank and FX Fees"
+  outstanding = ""                   # blank = the root folder
+  # Optional: kind -> filename regexes, overriding the built-in routing.
+  # quarter_end = "Reports/Quarter End"  # quarter-end copies of the balance reports (the default)
+  # [drive.routes]
+  # reports = ["^Prepayments", "^Accruals", "^Deposits"]
+  # quarter_end = ["_(prepayments|accruals|deposits)_q[1-4]_\\d{4}\\.xlsx$"]
+
+# -----------------------------------------------------------------------------
+# BANK FEES: the price list scripts/bank_fees.py checks each fee against, per
+# provider. Fill it from YOUR bank's price list and plan; the figures below
+# are placeholders, not anyone's actual tariff. The part names (FX markup,
+# weekend FX, guaranteed SWIFT, international transfer, ACH) are generic
+# examples of fees business banks commonly charge, not a description of any
+# plan: leave out a part your plan does not charge. Every key is optional, and
+# a provider with no tariff configured has its fees still collected and
+# charted, unsplit, as one "fee, no tariff configured" type.
+# -----------------------------------------------------------------------------
+
+# [bank_fees.revolut]
+# tariff_currency = "GBP"            # currency the fixed prices are quoted in
+# fx_pct = 0.6                       # % on a conversion over the plan's fee-free allowance
+# weekend_fx_pct = 1.0               # % extra on a conversion at the weekend
+# swift_fixed = 20.0                 # a guaranteed SWIFT transfer (sender pays all fees)
+# intl_fixed = 5.0                   # a standard international transfer outside the allowance
+# ach_pct = 0.2                      # % on a domestic ACH payment, if your plan charges one
+# ach_min = 0.50                     # the minimum ACH fee, in tariff_currency
+
+# -----------------------------------------------------------------------------
+# SAFETY: accounts whose payments are cleared by journal, never by the bank,
+# so scripts/check_no_phantom_payments.py does not flag them. Payroll control
+# accounts above are exempt already; list any other such account here.
+# -----------------------------------------------------------------------------
+
+# [safety]
+# phantom_check_exempt_accounts = []   # e.g. ["2150"]
+
+# -----------------------------------------------------------------------------
+# MODELS: the Claude model each kind of session runs on (optional; the values
+# below are the defaults). An environment variable overrides each one:
+# AGENT_MODEL, AGENT_QUERY_MODEL, AGENT_SMALL_MODEL (deploy/README.md).
+# -----------------------------------------------------------------------------
+
+[models]
+default = "opus"                     # every run that may post to Xero or Slack: scheduled, thread, consensus
+query = "claude-sonnet-5-5"          # read-only `query` sessions, which read and answer and never write
+small = "haiku"                      # helper sessions that only transcribe or look something up
+
+# -----------------------------------------------------------------------------
+# QUERY INVESTIGATION (.claude/skills/query-investigation): the read-only step
+# that gathers the evidence for a question before anyone is asked. It returns a
+# certainty from 1 to 5, mapped to a grade (5 and 4 high, 3 medium, 1 and 2
+# low); scripts/resolve_gate.py, from [auto_resolve], still decides what the
+# grade allows. Every key optional; the defaults are the ones shown.
+# -----------------------------------------------------------------------------
+
+[investigation]
+enabled = true                       # false: runs grade a question themselves, no investigation session
+daily_cap_usd = 35                   # sessions stop and defer to the next day once the day's cost reaches this
+batch_max = 8                        # queries one coordinator session takes
+debounce_seconds = 300               # a batch starts this long after the run's last new query, or on `wait`
+reuse_days = 14                      # a finished verdict stands this long when nothing under it has changed
+researchers_parallel = 2             # researcher sessions at once, per coordinator
+max_rounds = 3                       # research rounds per query
+# coordinator_model = ""             # default: [models] default
+# researcher_model = ""              # default: [models] small
+# effort = "medium"
+
+# -----------------------------------------------------------------------------
+# OUTSTANDING CHECK: the daily read-only check of the outstanding-items
+# register (scripts/outstanding_check.py). Every key is optional; the values
+# below are the defaults. The coordinator agent runs on [models] default.
+# -----------------------------------------------------------------------------
+
+# [outstanding_check]
+# enabled = true                     # false: the scheduled job does nothing
+# batch_size = 25                    # lines handed to one checker agent
+# min_xero_calls = 800               # skip the day when any entity has fewer Xero calls left
+# checker_model = "claude-sonnet-5-5"  # checkers on manual, queried and blocked lines
+# light_checker_model = ""           # checkers on chased documents and watches; empty: [models] small
+# trivial_amount = 0                 # a bookkeeping line whose whole amount at stake is under this,
+#                                    # in [company] reporting_currency, comes off the register:
+#                                    # `add` refuses it, the daily check deletes it. 0: off
+
+# -----------------------------------------------------------------------------
+# DAILY CHAIN: each link of the scheduled `daily` job (bookkeeping,
+# intercompany, accounts payable) is gated by scripts/daily_chain.py, plain
+# Python, and a Claude session starts only when there is work that needs
+# judgement. Every key is optional; the values below are the defaults.
+# -----------------------------------------------------------------------------
+
+# [daily_chain]
+# enabled = true                     # false: every link starts its session, as before the gates
+# attachment_lookback_days = 6       # days back in which every message with an attachment must have a ledger line (1 to 7)
+
+# -----------------------------------------------------------------------------
+# BRIEFING: the bookkeeping run's first steps done in plain Python before the
+# session opens (scripts/bookkeep_brief.py): both feeds refreshed, the ledger
+# pruned, the Slack app and the inbox swept against it, every document still to
+# work downloaded and, with read_documents on, read by invoice-extract and
+# looked up in Xero and rules/SUPPLIERS.md. The session opens on one file.
+# Every key is optional; the values below are the defaults.
+# -----------------------------------------------------------------------------
+
+# [briefing]
+# window_days = 7                    # the sweep's window, the ledger's own seven days at most
+# thread_lookback_days = 28          # a reply in an older thread still counts
+# fresh_hours = 2                    # a briefing older than this is built again
+# history_days = 183                 # how far back a supplier's coding history is read
+# read_documents = true              # false: the session reads each document itself
+# reader_model = ""                  # default: [models] small
+# second_look_model = ""             # default: [models] query; only where a read is in doubt
+# reader_max_usd = 0.5               # per document
+# second_look_max_usd = 1.5          # per document
+# workers = 6                        # documents read at once
+# timeout_seconds = 420              # per read
+# inline_chars = 28000               # a longer briefing is read with the Read tool, not printed
+# session_cache_ttl = "5m"           # the scheduled bookkeeping session's prompt cache, "5m" or "1h":
+#                                    # with the long scripts done before it starts, five minutes
+#                                    # writes the cache for less; its investigations keep the hour
+
+# -----------------------------------------------------------------------------
+# DOMAINS: separate bodies of work. One per run, never two at once.
+# Add your own (a skill plus its docs) and list it here; the Slack runner,
+# the outstanding-items register and the run prompts all read this list.
+# -----------------------------------------------------------------------------
+
+[[domains]]
+key = "bookkeeping"
+title = "Bookkeeping"
+skill = "xero-bills"
+# the entity files (rules/entities/<KEY>.md) are loaded per entity in scope
+docs = ["rules/GROUP.md", "rules/EXPENSES.md", "rules/ALLOCATION.md", "rules/SUPPLIERS.md",
+        "rules/PAYROLL.md", "rules/INTERCOMPANY.md", "rules/entities/<KEY>.md", "docs/bookkept/LEDGER.md"]
+
+[[domains]]
+key = "reports"
+title = "Standing Reports"
+skill = "reports"
+docs = []

@@ -1,0 +1,68 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v jq >/dev/null 2>&1 || { printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"install jq: the payment guard cannot run without it. Every Bash call is denied until jq is on PATH (apt-get install jq, brew install jq).\"}}'; exit 0; }; jq -r '.tool_input.command // \"\"' | grep -qE 'create_payment|create_payments_batch|create_batch_payment|allocate_prepayment|allocate_overpayment|allocate_credit_note|mark_reconciled|is_reconciled[[:space:]]*=[[:space:]]*True|(put|post|request)\\([^)]{0,40}Payments' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED by project safety rule: never create or allocate a payment, and never mark a bill paid or reconciled. Your job ends at an AUTHORISED bill with the source document attached and AmountDue still equal to the total. The user matches the imported bank statement line to it by hand in Xero. A payment you create is a phantom unreconciled bank entry that duplicates the real feed line. Do NOT rewrite this call to evade the check, and do not move the code into a file to run later: that is blocked too. Remove the payment step and tell the user which bills you left unpaid. Payroll bills cleared from control accounts (rules/PAYROLL.md) are the user'\\''s to clear: propose the amounts, never post.\"}}' || true",
+            "timeout": 10,
+            "statusMessage": "Checking for banned payment writes"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-payments.sh\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Payment guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-readonly.py\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Read-only guard (query sessions only)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-channel.py\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Channel guard (run sessions queue their posts)"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/hooks/guard-queries.py\" || exit 2",
+            "timeout": 10,
+            "statusMessage": "Query guard (a bookkeeping query is investigated first)"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ \"${AGENT_RUN:-}\" = 1 ] || exit 0; in=$(cat); [ -n \"${AGENT_READONLY:-}${AGENT_INVESTIGATION:-}\" ] && exit 0; printf '%s' \"$in\" | jq -r '.prompt // \"\"' | grep -q 'SCOPE: this is not the daily bookkeeping run' && exit 0; [ -n \"${AGENT_THREAD_RESUMED:-}\" ] && [ \"$(printf '%s' \"$in\" | jq -r '.session_id // \"\"')\" = \"$AGENT_THREAD_RESUMED\" ] && exit 0; printf '%s' \"$in\" | jq -r '.prompt // \"\"' | grep -qiE 'bookkeep|bookkept|invoice|accounting (inbox|email|@)|bank feed' && printf '%s' '{\"hookSpecificOutput\": {\"hookEventName\": \"UserPromptSubmit\", \"additionalContext\": \"BOOKKEEPING RUN DETECTED. Before anything else, in this order: (1) invoke the xero-bills skill with the Skill tool (it requires the xero skill too); (2) your first command is .venv/bin/python scripts/daily_chain.py bookkeep-brief, which prints the briefing for this run, built by the scheduled gate or built now: the bank feed and the bill feed refreshed, docs/bookkept/LEDGER.md pruned, the Slack app and the accounting inbox swept against the ledger, every document still to work downloaded into data/briefings/bookkeep/docs/ and read, each with its Xero, rules/SUPPLIERS.md and coding-history lookups, bank feed status, the xero-check of every feed line, the bookkeeping lines of the register and the investigations due. Never repeat any of those by hand and never cat the feeds, the ledger or the register; do yourself only what the briefing lists under not done here; (2a) settle the open to confirm items (xero-bills step 1a), then run .venv/bin/python scripts/outstanding.py accept; (3) never read a document in this session: a further read is an invoice-extract subagent, and any lookup whose output would run past a few lines (supplier history across the entities, whether a receipt is already in Xero, payments around a date) goes to a query-researcher subagent; (4) post everything the run decides in ONE call, .venv/bin/python scripts/post_bills.py data/briefings/bookkeep/bills.json --live, whose settle list writes each ledger line, closes the register lines the postings answer, labels each email processed and removes further feed lines, each once its document is posted; re-run it with --only for a document you fixed; the Xero duplicate guard it runs remains the authority before any create; (4a) before any question goes to a person, answer it yourself from the evidence (xero-bills step 3a): open an investigation with .venv/bin/python scripts/investigate_query.py open the moment the question comes up, carry on, call wait once before the report, map the verdict to its grade, take it to the gate with investigate_query.py gate, and follow act, confirm or query; (5) cross-check any bank lines pasted by a user against the ledger before chasing anyone; (6) after the intake, unless your prompt says the accounts payable check that follows runs it (the scheduled run: it runs once a night, never twice), load the bill-payments skill and run its check against the bank lines already read: an open bill in one entity paid from another entity gets the payer'\\''s spend money to the intercompany loan and a bill payments line in the report, same-entity matches need nothing, and no payment is ever created; (7) write the report with .venv/bin/python scripts/bookkeep_report.py, then add the headline and the sections that need judgement, and queue it with scripts/slack_outbox.py. Company-specific judgement (which entity recognises a cost, coding, allocation, suppliers, payroll, interco routing) comes from rules/, structure and account codes from config/group.toml. Load ONLY the bookkeeping domain. Every query, manual item and blocked line goes into scripts/outstanding.py in the same step that sends it. NEVER create a payment or mark a bill paid: bills stay AUTHORISED and unpaid, the user reconciles the bank feed to them by hand. FINISH the run by executing: .venv/bin/python scripts/check_no_phantom_payments.py and .venv/bin/python scripts/outstanding.py check-queries; both must print PASS before you report the run as done.\"}}' || true",
+            "timeout": 10,
+            "statusMessage": "Checking bookkeeping workflow"
+          }
+        ]
+      }
+    ]
+  }
+}
